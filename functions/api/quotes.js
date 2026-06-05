@@ -1,6 +1,8 @@
 // Cloudflare Pages Function — busca cotações na brapi.dev
 // Endpoint: /api/quotes?tickers=PETR4,VALE3,...
 // O token fica na variável de ambiente BRAPI_TOKEN (escondido do navegador).
+// O plano gratuito da brapi permite 1 ticker por requisição, então
+// buscamos um de cada vez e juntamos os resultados.
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -12,8 +14,8 @@ export async function onRequest(context) {
 
   try {
     const url = new URL(request.url);
-    const tickers = url.searchParams.get('tickers') || '';
-    if (!tickers) {
+    const raw = url.searchParams.get('tickers') || '';
+    if (!raw) {
       return new Response(JSON.stringify({ error: 'sem tickers informados' }), { status: 400, headers });
     }
 
@@ -22,29 +24,34 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'BRAPI_TOKEN nao configurado nas variaveis de ambiente' }), { status: 500, headers });
     }
 
-    const apiUrl = 'https://brapi.dev/api/quote/' + encodeURIComponent(tickers) +
-                   '?token=' + encodeURIComponent(token);
-    const resp = await fetch(apiUrl);
-    const raw = await resp.text();
-    let data = {};
-    try { data = JSON.parse(raw); } catch (_) {}
+    const tickers = raw.split(',').map(t => t.trim()).filter(Boolean);
+    const results = [];
+    const errors = [];
 
-    if (resp.status !== 200) {
-      const msg = (data && data.message) ? data.message : ('brapi retornou status ' + resp.status);
-      return new Response(JSON.stringify({ error: msg }), { status: resp.status, headers });
+    // busca 1 ticker por vez (limite do plano gratuito brapi)
+    for (const tk of tickers) {
+      try {
+        const apiUrl = 'https://brapi.dev/api/quote/' + encodeURIComponent(tk) + '?token=' + encodeURIComponent(token);
+        const r = await fetch(apiUrl);
+        const txt = await r.text();
+        let d = {};
+        try { d = JSON.parse(txt); } catch (_) {}
+        if (r.status === 200 && d.results && d.results[0] && d.results[0].regularMarketPrice > 0) {
+          const q = d.results[0];
+          results.push({ symbol: q.symbol, price: q.regularMarketPrice, change: q.regularMarketChangePercent });
+        } else {
+          errors.push(tk + ': ' + ((d && d.message) ? d.message : ('status ' + r.status)));
+        }
+      } catch (e) {
+        errors.push(tk + ': ' + String((e && e.message) || e));
+      }
     }
-
-    const results = (data.results || []).map(q => ({
-      symbol: q.symbol,
-      price: q.regularMarketPrice,
-      change: q.regularMarketChangePercent
-    }));
 
     if (results.length === 0) {
-      return new Response(JSON.stringify({ results: [], error: 'nenhum resultado — token invalido ou tickers incorretos' }), { status: 200, headers });
+      return new Response(JSON.stringify({ results: [], error: 'nenhum preco obtido. ' + errors.join(' | ') }), { status: 200, headers });
     }
 
-    return new Response(JSON.stringify({ results }), { status: 200, headers });
+    return new Response(JSON.stringify({ results, errors }), { status: 200, headers });
   } catch (e) {
     return new Response(JSON.stringify({ error: String((e && e.message) || e) }), { status: 500, headers });
   }
