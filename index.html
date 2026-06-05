@@ -352,7 +352,7 @@ body{
 <div class="wrap">
   <div class="page active" id="page-painel">
     <div class="head">
-      <div class="eyebrow">— Dados reais · 03 de junho de 2026</div>
+      <div class="eyebrow" id="dataEyebrow">— Dados reais · base 03/06/2026</div>
       <h2>Ações de <em>dividendos</em>:<br>estão caras ou baratas?</h2>
       <p>Cotações e indicadores reais das principais pagadoras de dividendos da B3. O termômetro mostra se cada ação está <strong style="color:var(--up)">descontada</strong>, no <strong style="color:var(--warn)">preço justo</strong> ou <strong style="color:var(--down)">esticada</strong>, comparando os múltiplos atuais com o histórico do papel e com o setor. Não é recomendação de compra ou venda.</p>
     </div>
@@ -1127,6 +1127,8 @@ function recomputeAll(rerender=true){
 
 function refreshSourceUI(){
   document.getElementById('srcTxt').textContent='Atualizar · base '+DATA_DATE;
+  const eb=document.getElementById('dataEyebrow');
+  if(eb) eb.textContent='— Dados reais · atualizado em '+DATA_DATE;
   document.getElementById('footSource').innerHTML=
     `<strong style="color:var(--text-1)">Fonte dos dados:</strong> ${DATA_SRC}, em <strong>${DATA_DATE}</strong>.`;
 }
