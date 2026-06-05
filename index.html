@@ -200,6 +200,9 @@ body{
 .foot-note{text-align:center;padding:30px 0 40px;font-family:var(--font-mono);font-size:10px;color:var(--text-3);line-height:1.7}
 
 /* ===== RESPONSIVE ===== */
+/* ============================================================
+   RESPONSIVO — Mobile First reforçado
+============================================================ */
 @media (max-width:920px){
   .kpis{grid-template-columns:1fr 1fr}
   .grid-2{grid-template-columns:1fr}
@@ -207,27 +210,120 @@ body{
   .ind-grid{grid-template-columns:repeat(3,1fr)}
   .detail-top{grid-template-columns:1fr 1fr}
 }
+
 @media (max-width:680px){
   .wrap,.topbar-in{padding-left:14px;padding-right:14px}
-  .topbar-in{flex-wrap:wrap;gap:10px}
-  .src-badge{margin-left:0;order:3;width:100%;justify-content:center}
-  .tabs{margin-left:0;order:2;width:100%}
-  .tab{flex:1;text-align:center}
+  /* topbar reorganizada: marca + atualizar na 1ª linha, abas na 2ª */
+  .topbar-in{flex-wrap:wrap;gap:10px;padding-top:12px;padding-bottom:12px}
   .brand{order:1}
-  .head{padding:24px 0 18px}
+  .brand-txt h1{font-size:16px}
+  .src-badge{order:2;margin-left:auto;padding:9px 12px;font-size:9px}
+  .tabs{order:3;margin-left:0;width:100%}
+  .tab{flex:1;text-align:center;padding:11px 8px;font-size:12px;min-height:44px;display:flex;align-items:center;justify-content:center}
+
+  .head{padding:22px 0 16px}
+  .eyebrow{font-size:9.5px}
+  .head h2{font-size:26px;line-height:1.12}
+  .head p{font-size:13.5px}
+
   .kpis{grid-template-columns:1fr 1fr;gap:10px}
-  .kpi .val{font-size:24px}
-  .alloc-controls{grid-template-columns:1fr}
+  .kpi{padding:15px}
+  .kpi .val{font-size:23px}
+  .kpi .ic{width:60px;height:60px}
+
+  .panel-head{padding:15px 16px}
+  .panel-head h3{font-size:16px}
+  .panel-body{padding:16px}
+
+  /* === TABELAS VIRAM CARDS === */
+  .tbl-scroll{overflow:visible}
+  .tbl{min-width:0;width:100%;display:block}
+  .tbl thead{display:none}                 /* esconde cabeçalho */
+  .tbl tbody{display:block}
+  .tbl tbody tr{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px 12px;
+    padding:15px 16px;
+    margin-bottom:12px;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    border-bottom:1px solid var(--line);   /* sobrescreve o :last-child */
+  }
+  .tbl tbody tr:active{background:var(--bg-3)}  /* feedback de toque */
+  .tbl tbody td{
+    display:flex;flex-direction:column;gap:3px;
+    padding:0;border:none;text-align:left;
+    font-size:14px;
+  }
+  /* rótulo acima do valor (vem do data-label) */
+  .tbl tbody td::before{
+    content:attr(data-label);
+    font-family:var(--font-mono);
+    font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-3);font-weight:500;
+  }
+  /* ticker e empresa ocupam a primeira linha inteira, em destaque */
+  .tbl tbody td.t-tk{
+    grid-column:1 / -1;
+    font-size:18px;font-weight:600;
+    flex-direction:row;align-items:center;gap:8px;
+    padding-bottom:8px;border-bottom:1px solid var(--line);
+  }
+  .tbl tbody td.t-tk::before{display:none}
+  .tbl tbody td.t-nm{
+    grid-column:1 / -1;
+    margin-top:-4px;
+    font-size:12px!important;
+  }
+  .tbl tbody td.t-nm::before{display:none}
+  .scorebar{justify-content:flex-start}
+  .scorebar .bar{width:80px!important}
+  /* linha "nenhum aporte": ocupa tudo */
+  .tbl tbody td[colspan]{grid-column:1 / -1;text-align:center}
+  .tbl tbody td[colspan]::before{display:none}
+
+  .alloc-controls{grid-template-columns:1fr;gap:14px}
   .alloc-summary{grid-template-columns:1fr 1fr}
-  .ind-grid{grid-template-columns:1fr 1fr}
-  .detail-top{grid-template-columns:1fr}
+  .seg button{padding:12px 8px;min-height:44px;font-size:12px}
+  .money-in input{font-size:22px;padding:14px 14px 14px 40px}
+  .btn{width:100%;padding:15px;min-height:48px;font-size:13px}
+  .panel-head .btn{width:auto;padding:11px 14px;min-height:40px}
+
+  .ind-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .detail-top{grid-template-columns:1fr;gap:10px}
+  .chart-box,.chart-box.sm{height:260px}
+
+  /* modal vira folha inferior */
   .modal-bg{padding:0;align-items:flex-end}
-  .modal{max-height:94vh;border-radius:16px 16px 0 0}
-  .toast-wrap{top:auto;bottom:20px;left:14px;right:14px}
-  .toast{min-width:0}
+  .modal{max-height:92vh;border-radius:18px 18px 0 0}
+  .modal-head{padding:18px 18px}
+  .modal-head h2{font-size:20px}
+  .modal-body{padding:18px}
+  .modal-close{width:40px;height:40px;font-size:20px}
+
+  /* tela de atualizar preços: campos maiores e numéricos */
+  #updateFields .money-in{width:130px!important}
+  #updateFields input{font-size:16px!important;padding:11px 10px 11px 34px!important;min-height:44px}
+
+  .toast-wrap{top:auto;bottom:16px;left:14px;right:14px}
+  .toast{min-width:0;width:100%}
+
+  .foot-note{padding:24px 0 36px}
 }
+
 @media (max-width:380px){
   .kpis,.alloc-summary,.ind-grid{grid-template-columns:1fr}
+  .tbl tbody tr{grid-template-columns:1fr 1fr}
+  .head h2{font-size:23px}
+  .brand-txt h1{font-size:15px}
+}
+
+/* dispositivos de toque: remove hover "grudento" e dá feedback ativo */
+@media (hover:none){
+  .tab:not(.active):active{color:var(--text-0)}
+  .kpi:active{transform:scale(.99)}
 }
 </style>
 </head>
@@ -341,7 +437,7 @@ body{
         <div class="alloc-controls" style="margin-top:16px">
           <div>
             <div class="field-lbl" id="capLbl">Valor por mês</div>
-            <div class="money-in"><span class="cur">R$</span><input type="text" id="capInput" value="1.000,00"></div>
+            <div class="money-in"><span class="cur">R$</span><input type="text" inputmode="decimal" id="capInput" value="1.000,00"></div>
           </div>
           <div>
             <div class="field-lbl">Nº de ações na carteira <span id="nAssetsVal" style="color:var(--accent)">6</span></div>
@@ -601,16 +697,16 @@ function renderRanking(){
   document.getElementById('rankHead').innerHTML=RANK_COLS.map(c=>`<th>${c}</th>`).join('');
   document.getElementById('rankBody').innerHTML=STOCKS.map(s=>`
     <tr onclick="openModal('${s.t}')">
-      <td class="t-tk">${s.t}<span class="real-dot" title="Dado real 03/06/2026"></span></td>
-      <td class="t-nm">${s.n}</td>
-      <td>${fmtBRL(s.px)}</td>
-      <td style="color:var(--up)">${s.dy.toFixed(1)}%</td>
-      <td>${s.pl.toFixed(1)}×</td>
-      <td>${s.pvp.toFixed(2)}</td>
-      <td>${s.roe.toFixed(1)}%</td>
-      <td class="${s.potential>=0?'up':'down'}">${s.potential>=0?'+':''}${s.potential.toFixed(1)}%</td>
-      <td><span class="scorebar"><span>${s.score.toFixed(0)}</span><span class="bar"><span class="fill" style="width:${s.score}%"></span></span></span></td>
-      <td>${valTag(s.val.level)}</td>
+      <td class="t-tk" data-label="Ação">${s.t}<span class="real-dot" title="Dado real"></span></td>
+      <td class="t-nm" data-label="Empresa">${s.n}</td>
+      <td data-label="Preço">${fmtBRL(s.px)}</td>
+      <td data-label="DY" style="color:var(--up)">${s.dy.toFixed(1)}%</td>
+      <td data-label="P/L">${s.pl.toFixed(1)}×</td>
+      <td data-label="P/VP">${s.pvp.toFixed(2)}</td>
+      <td data-label="ROE">${s.roe.toFixed(1)}%</td>
+      <td data-label="Potencial" class="${s.potential>=0?'up':'down'}">${s.potential>=0?'+':''}${s.potential.toFixed(1)}%</td>
+      <td data-label="Score"><span class="scorebar"><span>${s.score.toFixed(0)}</span><span class="bar"><span class="fill" style="width:${s.score}%"></span></span></span></td>
+      <td data-label="Valuation">${valTag(s.val.level)}</td>
     </tr>`).join('');
 }
 
@@ -846,14 +942,14 @@ function runAllocator(){
   const maxVal=Math.max(...allocs.map(a=>a.val));
   document.getElementById('allocBody').innerHTML=allocs.map(a=>`
     <tr onclick="openModal('${a.s.t}')">
-      <td class="t-tk">${a.s.t}</td>
-      <td class="t-nm">${a.s.n}</td>
-      <td>${fmtBRL(a.s.px)}</td>
-      <td>${a.qty}</td>
-      <td>${fmtBRL(a.val)}</td>
-      <td>${(a.val/used*100).toFixed(1)}%</td>
-      <td class="up">${fmtShort(a.income)}</td>
-      <td><span class="scorebar"><span class="bar" style="width:54px"><span class="fill" style="width:${a.val/maxVal*100}%"></span></span></span></td>
+      <td class="t-tk" data-label="Ação">${a.s.t}</td>
+      <td class="t-nm" data-label="Empresa">${a.s.n}</td>
+      <td data-label="Preço">${fmtBRL(a.s.px)}</td>
+      <td data-label="Qtd">${a.qty}</td>
+      <td data-label="Valor">${fmtBRL(a.val)}</td>
+      <td data-label="% Aporte">${(a.val/used*100).toFixed(1)}%</td>
+      <td data-label="Renda/ano" class="up">${fmtShort(a.income)}</td>
+      <td data-label="Peso"><span class="scorebar"><span class="bar" style="width:54px"><span class="fill" style="width:${a.val/maxVal*100}%"></span></span></span></td>
     </tr>`).join('');
 
   document.getElementById('allocResult').classList.add('show');
@@ -921,14 +1017,14 @@ function renderCarteira(){
       const diff=pctNow-pctIdeal;
       const diffColor=Math.abs(diff)<3?'var(--text-3)':diff<0?'var(--up)':'var(--warn)';
       return `<tr onclick="openModal('${r.s.t}')">
-        <td class="t-tk">${r.s.t}</td>
-        <td class="t-nm">${r.s.n}</td>
-        <td>${r.qty}</td>
-        <td>${fmtBRL(r.invested)}</td>
-        <td>${fmtBRL(r.s.px)}</td>
-        <td>${fmtBRL(r.current)}</td>
-        <td>${pctNow.toFixed(1)}%</td>
-        <td style="color:${diffColor}">${pctIdeal.toFixed(1)}% <span style="font-size:10px">(${diff>=0?'+':''}${diff.toFixed(1)})</span></td>
+        <td class="t-tk" data-label="Ação">${r.s.t}</td>
+        <td class="t-nm" data-label="Empresa">${r.s.n}</td>
+        <td data-label="Qtd total">${r.qty}</td>
+        <td data-label="Investido">${fmtBRL(r.invested)}</td>
+        <td data-label="Preço atual">${fmtBRL(r.s.px)}</td>
+        <td data-label="Valor atual">${fmtBRL(r.current)}</td>
+        <td data-label="% Cart.">${pctNow.toFixed(1)}%</td>
+        <td data-label="Peso ideal" style="color:${diffColor}">${pctIdeal.toFixed(1)}% <span style="font-size:10px">(${diff>=0?'+':''}${diff.toFixed(1)})</span></td>
       </tr>`;
     }).join('');
   }
@@ -1103,7 +1199,7 @@ function openUpdate(){
       <div style="flex:1;color:var(--text-3);font-size:11px">${s.n}</div>
       <div class="money-in" style="width:150px">
         <span class="cur" style="font-size:12px">R$</span>
-        <input type="text" data-tk="${s.t}" placeholder="${s.px.toFixed(2).replace('.',',')}" style="font-size:15px;padding:9px 10px 9px 36px">
+        <input type="text" inputmode="decimal" data-tk="${s.t}" placeholder="${s.px.toFixed(2).replace('.',',')}" style="font-size:15px;padding:9px 10px 9px 36px">
       </div>
     </div>`).join('');
   document.getElementById('updateHint').textContent='▸ valores atuais · deixe vazio para manter';
