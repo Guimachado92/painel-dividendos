@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Painel de Dividendos · B3</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-0:#0a0d12; --bg-1:#0f141b; --bg-2:#151c26; --bg-3:#1c2530;
+  --line:#1f2a38; --line-2:#2a3848;
+  --text-0:#f4f7fb; --text-1:#c4cedb; --text-2:#8995a6; --text-3:#5a6677;
+  --accent:#d4a574; --accent-2:#e8c391;
+  --up:#22c389; --down:#ff5470; --warn:#ffb547; --info:#5b9eff;
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'Inter Tight',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg-0); color:var(--text-1); font-family:var(--font-body);
+  font-size:14px; line-height:1.5; min-height:100vh;
+  background-image:radial-gradient(900px 500px at 85% -10%, rgba(212,165,116,.07), transparent 60%),
+                   radial-gradient(700px 400px at 0% 100%, rgba(91,158,255,.05), transparent 55%);
+  -webkit-font-smoothing:antialiased;
+}
+.up{color:var(--up)} .down{color:var(--down)} .warn{color:var(--warn)} .info{color:var(--info)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg-1)}
+::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+
+/* ===== LAYOUT ===== */
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg-0) 88%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1160px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;color:var(--bg-0);font-family:var(--font-display);font-weight:600;font-size:18px;box-shadow:0 4px 16px rgba(212,165,116,.3)}
+.brand-txt h1{font-family:var(--font-display);font-weight:500;font-size:17px;color:var(--text-0);letter-spacing:-.01em;line-height:1}
+.brand-txt span{font-family:var(--font-mono);font-size:9px;letter-spacing:.22em;color:var(--text-3);text-transform:uppercase}
+.src-badge{margin-left:auto;display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:20px;
+  font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid rgba(91,158,255,.3);background:rgba(91,158,255,.07);color:var(--info);white-space:nowrap}
+.src-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--info);flex-shrink:0;box-shadow:0 0 8px currentColor;animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.tabs{display:flex;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:3px;margin-left:8px}
+.tab{padding:8px 16px;border:none;background:none;cursor:pointer;font-family:var(--font-mono);font-size:11px;
+  font-weight:500;letter-spacing:.06em;color:var(--text-2);border-radius:7px;transition:all .2s;white-space:nowrap}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--bg-0)}
+.tab:not(.active):hover{color:var(--text-0)}
+
+/* ===== PAGE HEAD ===== */
+.page{display:none;animation:fade .4s cubic-bezier(.16,1,.3,1)}
+.page.active{display:block}
+@keyframes fade{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+.head{padding:34px 0 24px}
+.eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:.24em;color:var(--accent);text-transform:uppercase;margin-bottom:12px}
+.head h2{font-family:var(--font-display);font-weight:400;font-size:clamp(26px,5vw,40px);color:var(--text-0);letter-spacing:-.02em;line-height:1.08;margin-bottom:12px}
+.head h2 em{font-style:italic;color:var(--accent)}
+.head p{color:var(--text-2);max-width:680px;font-size:14px;line-height:1.65}
+
+/* ===== KPI ===== */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:30px}
+.kpi{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r);padding:17px;position:relative;overflow:hidden;transition:transform .3s,border-color .3s}
+.kpi:hover{transform:translateY(-2px);border-color:var(--line-2)}
+.kpi.primary{background:linear-gradient(150deg,rgba(212,165,116,.13),var(--bg-1) 62%);border-color:rgba(212,165,116,.3)}
+.kpi .lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;color:var(--text-3);text-transform:uppercase;margin-bottom:13px}
+.kpi .val{font-family:var(--font-display);font-weight:400;font-size:29px;line-height:1;color:var(--text-0)}
+.kpi .val .u{font-size:16px;color:var(--text-2)}
+.kpi .foot{margin-top:8px;font-family:var(--font-mono);font-size:10px;color:var(--text-3)}
+.kpi .ic{position:absolute;right:-8px;bottom:-10px;width:74px;height:74px;color:var(--accent);opacity:.09}
+.kpi .ic svg{width:100%;height:100%}
+
+/* ===== KPI INFO BUTTON + POPOVER ===== */
+.kpi .lbl,.mini-kpi .lbl{padding-right:26px}
+.mini-kpi{position:relative}
+.info-btn{position:absolute;top:12px;right:12px;width:21px;height:21px;border-radius:50%;border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2);font-family:var(--font-display);font-size:12px;font-weight:600;font-style:italic;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:4;transition:color .2s,border-color .2s,background .2s}
+.info-btn:hover{color:var(--accent);border-color:var(--accent);background:var(--bg-3)}
+.info-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mini-kpi .info-btn{top:11px;right:11px;width:19px;height:19px;font-size:11px}
+.kpi-pop{position:fixed;z-index:300;max-width:300px;width:calc(100vw - 28px);background:var(--bg-3);border:1px solid var(--line-2);border-radius:12px;padding:15px 16px;font-family:var(--font-body);font-size:12.5px;line-height:1.62;color:var(--text-1);box-shadow:0 18px 50px rgba(0,0,0,.55);opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s,transform .18s;pointer-events:none}
+.kpi-pop.show{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}
+.kpi-pop strong{color:var(--text-0);font-weight:600}
+.kpi-pop .pop-ttl{display:block;font-family:var(--font-display);font-weight:500;font-size:15px;color:var(--accent);margin-bottom:7px;letter-spacing:-.01em}
+.ind .il{gap:4px}
+.il-nm{display:inline-flex;align-items:center;min-width:0}
+.ind-info{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-left:5px;border-radius:50%;border:1px solid var(--line-2);background:var(--bg-3);color:var(--text-2);font-family:var(--font-display);font-style:italic;font-weight:600;font-size:9px;line-height:1;text-transform:none;letter-spacing:normal;cursor:pointer;padding:0;transition:color .2s,border-color .2s}
+.ind-info:hover{color:var(--accent);border-color:var(--accent)}
+.ind-info:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* ===== PANEL ===== */
+.panel{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:20px}
+.panel-head{padding:17px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.panel-head h3{font-family:var(--font-display);font-weight:500;font-size:17px;color:var(--text-0);letter-spacing:-.01em}
+.panel-head .sub{font-family:var(--font-mono);font-size:10px;color:var(--text-3);letter-spacing:.05em}
+.panel-body{padding:20px}
+.grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:start}
+
+/* ===== VALUATION BADGE ===== */
+.val-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-family:var(--font-mono);
+  font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.val-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.val-cheap{background:rgba(34,195,137,.12);color:var(--up);border:1px solid rgba(34,195,137,.3)}
+.val-fair{background:rgba(255,181,71,.12);color:var(--warn);border:1px solid rgba(255,181,71,.3)}
+.val-rich{background:rgba(255,84,112,.12);color:var(--down);border:1px solid rgba(255,84,112,.3)}
+
+/* ===== TABLE ===== */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{width:100%;border-collapse:collapse;min-width:680px}
+.tbl thead th{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-3);text-transform:uppercase;
+  text-align:right;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:500;white-space:nowrap;background:var(--bg-2)}
+.tbl thead th:first-child,.tbl thead th:nth-child(2){text-align:left}
+.tbl tbody td{padding:14px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--font-mono);font-size:13px;color:var(--text-1);white-space:nowrap}
+.tbl tbody tr{cursor:pointer;transition:background .15s}
+.tbl tbody tr:hover{background:var(--bg-2)}
+.tbl tbody tr:last-child td{border-bottom:none}
+.t-tk{text-align:left!important;font-weight:600;color:var(--text-0);letter-spacing:.03em}
+.t-nm{text-align:left!important;font-family:var(--font-body)!important;color:var(--text-2);font-size:12px!important}
+.real-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--up);margin-left:6px;vertical-align:middle;box-shadow:0 0 7px var(--up);animation:pulse 2.4s infinite}
+.scorebar{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.scorebar .bar{width:46px;height:5px;background:var(--bg-3);border-radius:3px;overflow:hidden}
+.scorebar .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:3px}
+
+/* ===== SECTOR / DISTRIBUTION BARS ===== */
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+.bar-row .nm{font-size:12px;color:var(--text-2);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-row .track{flex:1;height:8px;background:var(--bg-3);border-radius:4px;overflow:hidden}
+.bar-row .fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.16,1,.3,1)}
+.bar-row .pct{font-family:var(--font-mono);font-size:11px;width:62px;text-align:right;flex-shrink:0}
+
+.chart-box{position:relative;height:300px}
+.chart-box.sm{height:240px}
+
+/* ===== ALLOCATOR ===== */
+.alloc-controls{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:8px}
+.field-lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--text-3);text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.seg{display:flex;gap:3px;background:var(--bg-2);border:1px solid var(--line);border-radius:9px;padding:3px}
+.seg button{flex:1;padding:9px;border:none;background:none;cursor:pointer;font-family:var(--font-mono);font-size:11px;color:var(--text-2);border-radius:6px;transition:all .2s}
+.seg button.active{background:var(--accent);color:var(--bg-0);font-weight:500}
+.money-in{position:relative}
+.money-in .cur{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-family:var(--font-mono);color:var(--text-3);font-size:15px}
+.money-in input{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:9px;padding:13px 14px 13px 42px;
+  color:var(--text-0);font-family:var(--font-display);font-size:24px;outline:none;transition:border-color .2s}
+.money-in input:focus{border-color:var(--accent)}
+.slider-wrap{display:flex;align-items:center;gap:14px}
+.slider-wrap input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--bg-3);outline:none}
+.slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 8px rgba(212,165,116,.5)}
+.slider-wrap input[type=range]::-moz-range-thumb{width:18px;height:18px;border:none;border-radius:50%;background:var(--accent);cursor:pointer}
+.slider-val{font-family:var(--font-mono);font-size:14px;color:var(--text-0);width:30px;text-align:center}
+.btn{padding:13px 22px;border:none;border-radius:9px;font-family:var(--font-mono);font-size:12px;font-weight:500;letter-spacing:.06em;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--bg-0)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,165,116,.35)}
+
+.alloc-result{display:none;margin-top:22px}
+.alloc-result.show{display:block;animation:fade .4s}
+.alloc-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px}
+.mini-kpi{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:15px}
+.mini-kpi .lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-3);text-transform:uppercase;margin-bottom:9px}
+.mini-kpi .val{font-family:var(--font-display);font-size:21px;color:var(--text-0);line-height:1}
+.mini-kpi .sub{font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-top:6px}
+
+.ai-note{background:linear-gradient(135deg,rgba(212,165,116,.07),transparent);border:1px solid rgba(212,165,116,.2);border-radius:10px;padding:16px 18px;margin-bottom:20px}
+.ai-note .tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:9px}
+.ai-note p{font-size:13px;line-height:1.7;color:var(--text-1)}
+.ai-note strong{color:var(--text-0);font-weight:600}
+
+/* ===== MODAL ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(6,8,12,.75);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.active{display:flex;animation:fade .25s}
+.modal{background:var(--bg-1);border:1px solid var(--line-2);border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.modal-head{padding:22px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg-1);z-index:2}
+.modal-head .row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.modal-head h2{font-family:var(--font-display);font-weight:500;font-size:23px;color:var(--text-0);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.modal-head .tk{font-family:var(--font-mono);font-size:12px;color:var(--accent);background:var(--bg-3);padding:3px 9px;border-radius:5px;letter-spacing:.05em}
+.modal-head .sect{font-family:var(--font-mono);font-size:10px;color:var(--text-3);letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
+.modal-close{background:var(--bg-3);border:1px solid var(--line);color:var(--text-2);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;flex-shrink:0}
+.modal-close:hover{color:var(--text-0)}
+.modal-body{padding:24px}
+.detail-top{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:22px}
+.dstat{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:14px}
+.dstat .l{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--text-3);text-transform:uppercase;margin-bottom:8px}
+.dstat .v{font-family:var(--font-display);font-size:20px;color:var(--text-0);line-height:1}
+.dstat .s{font-family:var(--font-mono);font-size:10px;margin-top:5px}
+.ind-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:22px}
+.ind{background:var(--bg-2);border:1px solid var(--line);border-radius:9px;padding:13px}
+.ind .il{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.ind .iv{font-family:var(--font-mono);font-size:15px;color:var(--text-0);line-height:1}
+.ind .ist{font-size:9px;margin-top:5px;font-family:var(--font-mono)}
+.dot-g{color:var(--up)} .dot-n{color:var(--warn)} .dot-b{color:var(--down)}
+.modal-ai{background:linear-gradient(135deg,rgba(212,165,116,.07),transparent);border:1px solid rgba(212,165,116,.2);border-radius:11px;padding:18px}
+.modal-ai .tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-bottom:6px}
+.modal-ai h4{font-family:var(--font-display);font-weight:500;font-size:16px;color:var(--text-0);margin-bottom:11px}
+.modal-ai p{font-size:13px;line-height:1.7;color:var(--text-1)}
+.modal-ai strong{color:var(--text-0)}
+.disc{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--font-mono);font-size:9.5px;color:var(--text-3);line-height:1.55}
+
+/* ===== TOAST ===== */
+.toast-wrap{position:fixed;top:80px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--bg-2);border:1px solid var(--line-2);border-left:3px solid var(--accent);border-radius:9px;padding:13px 17px;min-width:240px;box-shadow:0 12px 36px rgba(0,0,0,.4);animation:slidein .3s}
+.toast.s{border-left-color:var(--up)} .toast.e{border-left-color:var(--down)} .toast.i{border-left-color:var(--info)}
+.toast .tt{font-size:13px;color:var(--text-0);font-weight:500;margin-bottom:3px}
+.toast .td{font-size:11px;color:var(--text-2)}
+@keyframes slidein{0%{opacity:0;transform:translateX(40px)}100%{opacity:1;transform:translateX(0)}}
+
+.foot-note{text-align:center;padding:30px 0 40px;font-family:var(--font-mono);font-size:10px;color:var(--text-3);line-height:1.7}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:920px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .grid-2{grid-template-columns:1fr}
+  .alloc-summary{grid-template-columns:1fr 1fr}
+  .ind-grid{grid-template-columns:repeat(3,1fr)}
+  .detail-top{grid-template-columns:1fr 1fr}
+}
+@media (max-width:680px){
+  .wrap,.topbar-in{padding-left:14px;padding-right:14px}
+  .topbar-in{flex-wrap:wrap;gap:10px}
+  .src-badge{margin-left:0;order:3;width:100%;justify-content:center}
+  .tabs{margin-left:0;order:2;width:100%}
+  .tab{flex:1;text-align:center}
+  .brand{order:1}
+  .head{padding:24px 0 18px}
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi .val{font-size:24px}
+  .alloc-controls{grid-template-columns:1fr}
+  .alloc-summary{grid-template-columns:1fr 1fr}
+  .ind-grid{grid-template-columns:1fr 1fr}
+  .detail-top{grid-template-columns:1fr}
+  .modal-bg{padding:0;align-items:flex-end}
+  .modal{max-height:94vh;border-radius:16px 16px 0 0}
+  .toast-wrap{top:auto;bottom:20px;left:14px;right:14px}
+  .toast{min-width:0}
+}
+@media (max-width:380px){
+  .kpis,.alloc-summary,.ind-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div class="brand-txt"><h1>Painel de Dividendos</h1><span>B3 · Renda</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-page="painel">Painel</button>
+      <button class="tab" data-page="alocador">Alocador</button>
+    </div>
+    <div class="src-badge"><span class="dot"></span><span id="srcTxt">8 ações reais · 03/06/2026</span></div>
+  </div>
+</header>
+
+<!-- ============ PAINEL ============ -->
+<div class="wrap">
+  <div class="page active" id="page-painel">
+    <div class="head">
+      <div class="eyebrow">— Dados reais · 03 de junho de 2026</div>
+      <h2>Ações de <em>dividendos</em>:<br>estão caras ou baratas?</h2>
+      <p>Cotações e indicadores reais das principais pagadoras de dividendos da B3. O termômetro mostra se cada ação está <strong style="color:var(--up)">descontada</strong>, no <strong style="color:var(--warn)">preço justo</strong> ou <strong style="color:var(--down)">esticada</strong>, comparando os múltiplos atuais com o histórico do papel e com o setor. Não é recomendação de compra ou venda.</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi primary">
+        <button class="info-btn" type="button" data-info="kDy" title="O que é isto?" aria-label="O que significa DY Médio da Lista?">i</button>
+        <div class="lbl">DY Médio da Lista</div>
+        <div class="val" id="kDy">—<span class="u">%</span></div>
+        <div class="foot">dividend yield 12m</div>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      </div>
+      <div class="kpi">
+        <button class="info-btn" type="button" data-info="kCheap" title="O que é isto?" aria-label="O que significa Descontadas?">i</button>
+        <div class="lbl">Descontadas</div>
+        <div class="val" id="kCheap">—</div>
+        <div class="foot">de 8 ações</div>
+      </div>
+      <div class="kpi">
+        <button class="info-btn" type="button" data-info="kScore" title="O que é isto?" aria-label="O que significa Score Médio?">i</button>
+        <div class="lbl">Score Médio</div>
+        <div class="val" id="kScore">—</div>
+        <div class="foot">qualidade · 0–100</div>
+      </div>
+      <div class="kpi">
+        <button class="info-btn" type="button" data-info="kPot" title="O que é isto?" aria-label="O que significa Potencial Médio?">i</button>
+        <div class="lbl">Potencial Médio</div>
+        <div class="val" id="kPot">—<span class="u">%</span></div>
+        <div class="foot">vs preço-alvo</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Ranking de dividendos</h3>
+        <span class="sub">● dado real · clique para detalhes</span>
+      </div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <thead><tr id="rankHead"></tr></thead>
+          <tbody id="rankBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel" style="margin-bottom:0">
+        <div class="panel-head"><h3>Mapa de valuation</h3><span class="sub">yield × risco</span></div>
+        <div class="panel-body"><div class="chart-box sm"><canvas id="scatterChart"></canvas></div></div>
+      </div>
+      <div class="panel" style="margin-bottom:0">
+        <div class="panel-head"><h3>Composição da lista</h3><span class="sub">por setor</span></div>
+        <div class="panel-body" id="sectorBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ALOCADOR ============ -->
+  <div class="page" id="page-alocador">
+    <div class="head">
+      <div class="eyebrow">— Onde alocar seu dinheiro</div>
+      <h2>Distribua seu <em>aporte</em></h2>
+      <p>Informe quanto quer investir e o sistema sugere uma distribuição entre as ações da lista, equilibrando dividend yield, qualidade e diversificação por setor, conforme seu perfil de risco. É uma simulação para organização, não recomendação de investimento.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Configuração do aporte</h3><span class="sub">monte sua simulação</span></div>
+      <div class="panel-body">
+        <div class="alloc-controls">
+          <div>
+            <div class="field-lbl">Tipo de aporte</div>
+            <div class="seg" id="aporteType">
+              <button class="active" data-type="mensal">Mensal</button>
+              <button data-type="unico">Valor único</button>
+            </div>
+          </div>
+          <div>
+            <div class="field-lbl">Perfil de risco</div>
+            <div class="seg" id="riskProfile">
+              <button data-risk="conservador">Conservador</button>
+              <button class="active" data-risk="moderado">Moderado</button>
+              <button data-risk="arrojado">Arrojado</button>
+            </div>
+          </div>
+        </div>
+        <div class="alloc-controls" style="margin-top:16px">
+          <div>
+            <div class="field-lbl" id="capLbl">Valor por mês</div>
+            <div class="money-in"><span class="cur">R$</span><input type="text" id="capInput" value="1.000,00"></div>
+          </div>
+          <div>
+            <div class="field-lbl">Nº de ações na carteira <span id="nAssetsVal" style="color:var(--accent)">6</span></div>
+            <div class="slider-wrap">
+              <span class="slider-val">3</span>
+              <input type="range" id="nAssets" min="3" max="8" value="6">
+              <span class="slider-val">8</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="runAllocator()">Calcular distribuição</button>
+        </div>
+
+        <div class="alloc-result" id="allocResult">
+          <div class="ai-note">
+            <div class="tag">◆ Resumo da carteira</div>
+            <p id="allocText">—</p>
+          </div>
+          <div class="alloc-summary">
+            <div class="mini-kpi"><button class="info-btn" type="button" data-info="sUsed" title="O que é isto?" aria-label="O que significa Investido?">i</button><div class="lbl">Investido</div><div class="val" id="sUsed">—</div><div class="sub" id="sCash">—</div></div>
+            <div class="mini-kpi"><button class="info-btn" type="button" data-info="sDy" title="O que é isto?" aria-label="O que significa DY ponderado?">i</button><div class="lbl">DY ponderado</div><div class="val" id="sDy">—</div><div class="sub">yield carteira</div></div>
+            <div class="mini-kpi"><button class="info-btn" type="button" data-info="sIncome" title="O que é isto?" aria-label="O que significa Renda em dividendos?">i</button><div class="lbl" id="sIncomeLbl">Renda / ano</div><div class="val up" id="sIncome">—</div><div class="sub" id="sIncomeSub">—</div></div>
+            <div class="mini-kpi"><button class="info-btn" type="button" data-info="sRisk" title="O que é isto?" aria-label="O que significa Risco?">i</button><div class="lbl">Risco</div><div class="val" id="sRisk">—</div><div class="sub">beta médio</div></div>
+          </div>
+          <div class="panel" style="margin-bottom:0">
+            <div class="panel-head"><h3>Distribuição sugerida</h3><span class="sub" id="allocSubTtl">—</span></div>
+            <div class="tbl-scroll">
+              <table class="tbl">
+                <thead><tr>
+                  <th>Ação</th><th>Empresa</th><th>Preço</th><th>Qtd</th><th>Valor</th><th>% Cart.</th><th id="incomeCol">Renda/ano</th><th>Peso</th>
+                </tr></thead>
+                <tbody id="allocBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot-note">
+    Dados captados manualmente de fontes públicas (Status Invest, Investidor10) em 03/06/2026 · valores podem estar desatualizados<br>
+    Esta ferramenta é informativa e não constitui recomendação de investimento. Consulte um profissional certificado.
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="row">
+        <div>
+          <h2 id="mTitle">—</h2>
+          <div class="sect" id="mSect">—</div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="detail-top">
+        <div class="dstat"><div class="l">Preço atual</div><div class="v" id="mPrice">—</div><div class="s" id="mChange">—</div></div>
+        <div class="dstat"><div class="l">Preço-alvo</div><div class="v" id="mTarget">—</div><div class="s" id="mPot">—</div></div>
+        <div class="dstat"><div class="l">Valuation · Score</div><div class="v" id="mVal">—</div><div class="s" id="mScore">—</div></div>
+      </div>
+      <div class="ind-grid" id="mInd"></div>
+      <div style="margin-bottom:22px"><div class="chart-box sm"><canvas id="mDivChart"></canvas></div></div>
+      <div class="modal-ai">
+        <div class="tag">◆ Análise · Valuation</div>
+        <h4>Está cara ou barata?</h4>
+        <p id="mNarr">—</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Popover de explicação dos KPIs -->
+<div class="kpi-pop" id="kpiPop" role="tooltip"></div>
+
+<script>
+/* ================================================================
+   DADOS REAIS — captados de fontes públicas em 03/06/2026
+   (Status Invest / Investidor10). Valores aproximados.
+   campos: px preço · ch var.dia% · dy yield12m% · pl P/L · pvp P/VP
+           roe% · roic% · ml margem líq% · dle dív/EBITDA · payout%
+           target preço-alvo · risk · beta · hist (DY 6 anos)
+================================================================ */
+const STOCKS = [
+  {t:'PETR4', n:'Petrobras', s:'Petróleo & Gás', px:42.37, ch:-0.46, dy:9.4, pl:7.0, pvp:1.2, roe:12.2, roic:11.0, ml:18.4, dle:1.2, payout:45, target:52.67, risk:'Alto', beta:1.32, hist:[18.4,16.2,14.8,13.2,11.0,9.4]},
+  {t:'VALE3', n:'Vale', s:'Mineração', px:85.00, ch:0.42, dy:6.7, pl:6.5, pvp:1.5, roe:15.6, roic:13.0, ml:31.2, dle:0.4, payout:54, target:90.00, risk:'Alto', beta:1.18, hist:[12.4,11.8,10.6,9.4,8.0,6.7]},
+  {t:'ITSA4', n:'Itaúsa', s:'Financeiro', px:12.90, ch:0.31, dy:9.7, pl:7.2, pvp:1.3, roe:17.0, roic:13.4, ml:32.1, dle:0.8, payout:48, target:14.50, risk:'Baixo', beta:0.78, hist:[8.1,8.4,8.9,9.1,9.4,9.7]},
+  {t:'ITUB4', n:'Itaú Unibanco', s:'Bancos', px:38.00, ch:0.21, dy:8.0, pl:9.0, pvp:1.8, roe:20.0, roic:15.0, ml:28.0, dle:0.0, payout:60, target:45.00, risk:'Baixo', beta:0.90, hist:[6.4,6.8,7.2,7.6,7.8,8.0]},
+  {t:'BBAS3', n:'Banco do Brasil', s:'Bancos', px:19.89, ch:-0.55, dy:5.0, pl:4.5, pvp:0.75, roe:12.0, roic:9.8, ml:24.2, dle:0.0, payout:30, target:22.50, risk:'Médio', beta:0.92, hist:[9.8,10.2,10.8,11.4,8.4,5.0]},
+  {t:'BBSE3', n:'BB Seguridade', s:'Seguros', px:35.03, ch:0.18, dy:12.9, pl:9.0, pvp:6.0, roe:50.0, roic:42.0, ml:38.4, dle:0.0, payout:88, target:36.50, risk:'Baixo', beta:0.71, hist:[8.4,8.8,9.2,11.0,12.0,12.9]},
+  {t:'TAEE11', n:'Taesa', s:'Energia', px:39.25, ch:-0.42, dy:8.4, pl:9.2, pvp:2.4, roe:22.0, roic:15.2, ml:42.8, dle:2.1, payout:90, target:42.00, risk:'Médio', beta:0.62, hist:[10.4,10.6,11.1,10.9,9.2,8.4]},
+  {t:'EGIE3', n:'Engie Brasil', s:'Energia', px:33.10, ch:0.28, dy:5.3, pl:15.0, pvp:2.7, roe:19.1, roic:14.0, ml:21.3, dle:4.3, payout:55, target:37.00, risk:'Baixo', beta:0.58, hist:[7.8,8.1,8.4,8.6,6.5,5.3]}
+];
+
+/* ===== SCORE (qualidade do papel, 0–100) ===== */
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function calcScore(s){
+  const dy   = clamp((s.dy/12)*100,0,100);
+  const val  = clamp(100-(s.pl-4)*7,0,100);
+  const prof = clamp((s.roe/25)*100,0,100);
+  const debt = clamp(100-s.dle*20,0,100);
+  const pot  = clamp(((s.target/s.px-1)*100)*5,0,100);
+  const pay  = s.payout>95?60:s.payout>30?90:70;
+  return Math.round((dy*0.24+val*0.18+prof*0.20+debt*0.13+pot*0.15+pay*0.10)*10)/10;
+}
+
+/* ===== TERMÔMETRO DE VALUATION (setor 60% + histórico 40%) ===== */
+function lowerBetter(v,cheap,rich){if(v==null||isNaN(v))return 0;if(v<=cheap)return 1;if(v>=rich)return -1;const m=(cheap+rich)/2;return v<m?(m-v)/(m-cheap):-(v-m)/(rich-m);}
+function higherBetter(v,rich,cheap){if(v==null||isNaN(v))return 0;if(v>=cheap)return 1;if(v<=rich)return -1;const m=(rich+cheap)/2;return v>m?(v-m)/(cheap-m):-(m-v)/(m-rich);}
+function ownHist(s){const h=(s.hist||[]).filter(x=>x!=null);if(h.length<2||!s.dy)return 0;const avg=h.reduce((a,b)=>a+b,0)/h.length;if(avg<=0)return 0;return clamp(((s.dy-avg)/avg)*2,-1,1);}
+function valuation(s){
+  const plS=lowerBetter(s.pl,8,16), pvpS=lowerBetter(s.pvp,1.2,3), dyS=higherBetter(s.dy,4,9);
+  const sector=plS*0.4+pvpS*0.25+dyS*0.35;
+  const hist=ownHist(s);
+  const composite=sector*0.6+hist*0.4;
+  const level=composite>=0.33?'cheap':composite<=-0.33?'rich':'fair';
+  return {level,composite,sector,hist,parts:{'P/L':plS,'P/VP':pvpS,'DY':dyS}};
+}
+const VLABEL={cheap:'Descontada',fair:'Preço justo',rich:'Esticada'};
+const VCLASS={cheap:'val-cheap',fair:'val-fair',rich:'val-rich'};
+const valTag=l=>`<span class="val-badge ${VCLASS[l]}">${VLABEL[l]}</span>`;
+
+STOCKS.forEach(s=>{s.score=calcScore(s);s.potential=(s.target/s.px-1)*100;s.val=valuation(s);});
+STOCKS.sort((a,b)=>{const o={cheap:0,fair:1,rich:2};return o[a.val.level]-o[b.val.level]||b.score-a.score;});
+
+/* setores derivados da lista */
+function sectorComposition(){
+  const m={};STOCKS.forEach(s=>{m[s.s]=(m[s.s]||0)+1;});
+  return Object.entries(m).map(([n,c])=>({n,c})).sort((a,b)=>b.c-a.c);
+}
+
+/* ===== FORMAT ===== */
+function fmtBRL(n){return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtShort(n){if(n>=1e6)return 'R$ '+(n/1e6).toFixed(2).replace('.',',')+'M';if(n>=1e3)return 'R$ '+(n/1e3).toFixed(1).replace('.',',')+'k';return fmtBRL(n);}
+function parseMoney(v){return parseFloat(String(v).replace(/\./g,'').replace(',','.'))||0;}
+
+/* ===== TOAST ===== */
+function toast(type,tt,td){
+  const w=document.getElementById('toastWrap');
+  const e=document.createElement('div');
+  e.className='toast '+(type==='success'?'s':type==='error'?'e':'i');
+  e.innerHTML=`<div class="tt">${tt}</div><div class="td">${td}</div>`;
+  w.appendChild(e);
+  setTimeout(()=>{e.style.opacity='0';e.style.transition='opacity .3s';setTimeout(()=>e.remove(),300);},3200);
+}
+
+/* ===== CHART DEFAULTS ===== */
+Chart.defaults.color='#8995a6';Chart.defaults.borderColor='#1f2a38';
+Chart.defaults.font.family="'JetBrains Mono', monospace";Chart.defaults.font.size=10;
+const grid={color:'rgba(31,42,56,.5)',drawBorder:false};
+
+/* ===== RENDER: KPIs ===== */
+function renderKpis(){
+  const avgDy=(STOCKS.reduce((a,s)=>a+s.dy,0)/STOCKS.length).toFixed(2);
+  const cheap=STOCKS.filter(s=>s.val.level==='cheap').length;
+  const avgScore=(STOCKS.reduce((a,s)=>a+s.score,0)/STOCKS.length).toFixed(1);
+  const avgPot=(STOCKS.reduce((a,s)=>a+s.potential,0)/STOCKS.length).toFixed(1);
+  document.getElementById('kDy').innerHTML=avgDy+'<span class="u">%</span>';
+  document.getElementById('kCheap').textContent=cheap;
+  document.getElementById('kScore').textContent=avgScore;
+  document.getElementById('kPot').innerHTML='+'+avgPot+'<span class="u">%</span>';
+}
+
+/* ===== RENDER: RANKING ===== */
+const RANK_COLS=['Ação','Empresa','Preço','DY%','P/L','P/VP','ROE%','Pot.%','Score','Valuation'];
+function renderRanking(){
+  document.getElementById('rankHead').innerHTML=RANK_COLS.map(c=>`<th>${c}</th>`).join('');
+  document.getElementById('rankBody').innerHTML=STOCKS.map(s=>`
+    <tr onclick="openModal('${s.t}')">
+      <td class="t-tk">${s.t}<span class="real-dot" title="Dado real 03/06/2026"></span></td>
+      <td class="t-nm">${s.n}</td>
+      <td>${fmtBRL(s.px)}</td>
+      <td style="color:var(--up)">${s.dy.toFixed(1)}%</td>
+      <td>${s.pl.toFixed(1)}×</td>
+      <td>${s.pvp.toFixed(2)}</td>
+      <td>${s.roe.toFixed(1)}%</td>
+      <td class="${s.potential>=0?'up':'down'}">${s.potential>=0?'+':''}${s.potential.toFixed(1)}%</td>
+      <td><span class="scorebar"><span>${s.score.toFixed(0)}</span><span class="bar"><span class="fill" style="width:${s.score}%"></span></span></span></td>
+      <td>${valTag(s.val.level)}</td>
+    </tr>`).join('');
+}
+
+/* ===== RENDER: SECTORS ===== */
+function renderSectors(){
+  const comp=sectorComposition();
+  const max=Math.max(...comp.map(c=>c.c));
+  const palette=['#d4a574','#5b9eff','#22c389','#ffb547','#e8c391','#8bbdff'];
+  document.getElementById('sectorBox').innerHTML=comp.map((c,i)=>`
+    <div class="bar-row">
+      <div class="nm">${c.n}</div>
+      <div class="track"><div class="fill" style="width:${c.c/max*100}%;background:${palette[i%palette.length]}"></div></div>
+      <div class="pct">${c.c} ${c.c>1?'ações':'ação'}</div>
+    </div>`).join('');
+}
+
+/* ===== SCATTER ===== */
+let scatterChart=null;
+function renderScatter(){
+  const pts=STOCKS.map(s=>({x:s.beta*12,y:s.dy,label:s.t,lvl:s.val.level}));
+  if(scatterChart)scatterChart.destroy();
+  scatterChart=new Chart(document.getElementById('scatterChart'),{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Descontada',data:pts.filter(p=>p.lvl==='cheap'),backgroundColor:'#22c389',pointRadius:7,pointHoverRadius:10},
+      {label:'Preço justo',data:pts.filter(p=>p.lvl==='fair'),backgroundColor:'#ffb547',pointRadius:7,pointHoverRadius:10},
+      {label:'Esticada',data:pts.filter(p=>p.lvl==='rich'),backgroundColor:'#ff5470',pointRadius:7,pointHoverRadius:10}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:8,padding:12,font:{size:10}}},
+        tooltip:{callbacks:{label:c=>` ${c.raw.label} · DY ${c.parsed.y}% · risco ${c.parsed.x.toFixed(1)}`}}},
+      scales:{x:{title:{display:true,text:'RISCO →',font:{size:9},color:'#5a6677'},grid,ticks:{font:{size:9}}},
+              y:{title:{display:true,text:'DIVIDEND YIELD %',font:{size:9},color:'#5a6677'},grid,ticks:{font:{size:9},callback:v=>v+'%'}}}}
+  });
+}
+
+/* ===== MODAL ===== */
+let mDivChart=null;
+function openModal(tk){
+  const s=STOCKS.find(x=>x.t===tk);if(!s)return;
+  document.getElementById('mTitle').innerHTML=`${s.n} <span class="tk">${s.t}</span>`;
+  document.getElementById('mSect').textContent='▸ '+s.s.toUpperCase();
+  document.getElementById('mPrice').textContent=fmtBRL(s.px);
+  document.getElementById('mChange').innerHTML=`<span class="${s.ch>=0?'up':'down'}">${s.ch>=0?'+':''}${s.ch.toFixed(2)}% hoje</span>`;
+  document.getElementById('mTarget').textContent=fmtBRL(s.target);
+  document.getElementById('mPot').innerHTML=`<span class="${s.potential>=0?'up':'down'}">${s.potential>=0?'+':''}${s.potential.toFixed(1)}%</span>`;
+  const v=s.val;
+  const col=v.level==='cheap'?'var(--up)':v.level==='rich'?'var(--down)':'var(--warn)';
+  document.getElementById('mVal').innerHTML=`<span style="color:${col}">${VLABEL[v.level]}</span>`;
+  document.getElementById('mScore').textContent='Score '+s.score+'/100';
+
+  const ind=[
+    ['Dividend Yield',s.dy.toFixed(1)+'%',s.dy>8?'g':s.dy>5?'n':'b','dy'],
+    ['Payout',s.payout+'%',s.payout<70?'g':s.payout<92?'n':'b','payout'],
+    ['P/L',s.pl.toFixed(1)+'×',s.pl<8?'g':s.pl<15?'n':'b','pl'],
+    ['P/VP',s.pvp.toFixed(2),s.pvp<1.5?'g':s.pvp<3?'n':'b','pvp'],
+    ['ROE',s.roe.toFixed(1)+'%',s.roe>15?'g':s.roe>10?'n':'b','roe'],
+    ['ROIC',s.roic.toFixed(1)+'%',s.roic>12?'g':s.roic>8?'n':'b','roic'],
+    ['Margem Líq.',s.ml.toFixed(1)+'%',s.ml>20?'g':s.ml>10?'n':'b','ml'],
+    ['Dív/EBITDA',s.dle.toFixed(1)+'×',s.dle<1?'g':s.dle<2.5?'n':'b','dle']
+  ];
+  document.getElementById('mInd').innerHTML=ind.map(([l,val,st,k])=>`<div class="ind"><div class="il"><span class="il-nm">${l}<button class="ind-info" type="button" data-info="${k}" title="O que é isto?" aria-label="O que significa ${l}?">i</button></span><span class="dot-${st}">●</span></div><div class="iv">${val}</div></div>`).join('');
+
+  if(mDivChart)mDivChart.destroy();
+  const yrs=['2021','2022','2023','2024','2025','2026e'];
+  mDivChart=new Chart(document.getElementById('mDivChart'),{type:'bar',
+    data:{labels:yrs,datasets:[{label:'DY %',data:s.hist,backgroundColor:ctx=>ctx.dataIndex===5?'rgba(212,165,116,.5)':'#d4a574',borderRadius:4,maxBarThickness:42}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Histórico de Dividend Yield (%)',font:{size:10},color:'#8995a6'},tooltip:{callbacks:{label:c=>' '+c.parsed.y+'%'}}},scales:{x:{grid:{display:false}},y:{grid,ticks:{callback:v=>v+'%',font:{size:9}}}}}
+  });
+
+  const avg=(s.hist.reduce((a,b)=>a+b,0)/s.hist.length).toFixed(1);
+  const word=v.level==='cheap'?'<strong style="color:var(--up)">descontada</strong>':v.level==='rich'?'<strong style="color:var(--down)">esticada</strong>':'<strong style="color:var(--warn)">próxima do preço justo</strong>';
+  const histW=v.hist>0.15?'mais barata que sua própria média histórica':v.hist<-0.15?'mais cara que sua média histórica':'em linha com sua média histórica';
+  document.getElementById('mNarr').innerHTML=`Pelos múltiplos atuais, <strong>${s.t}</strong> aparece como ${word} frente ao setor e ao próprio histórico.<br><br>
+    Negocia a <strong>P/L ${s.pl.toFixed(1)}×</strong> e <strong>P/VP ${s.pvp.toFixed(2)}</strong>, com <strong>DY de ${s.dy.toFixed(1)}%</strong> (média dos últimos anos ≈ ${avg}%, ou seja, ${histW}). ROE de ${s.roe.toFixed(1)}% e payout de ${s.payout}%.<br><br>
+    Leitura combinada (setor + histórico): <strong>${VLABEL[v.level]}</strong>. Os números estão acima — a conclusão é sua.
+    <span class="disc">⚠ Este termômetro descreve o quão caro ou barato o papel está hoje. Não é recomendação de compra ou venda. Dados reais captados em 03/06/2026.</span>`;
+
+  document.getElementById('modalBg').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){document.getElementById('modalBg').classList.remove('active');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* ================================================================
+   ALOCADOR — distribui o aporte (mensal ou único)
+================================================================ */
+const Alloc={type:'mensal',risk:'moderado',n:6};
+
+document.querySelectorAll('#aporteType button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#aporteType button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');Alloc.type=b.dataset.type;
+  document.getElementById('capLbl').textContent=Alloc.type==='mensal'?'Valor por mês':'Valor total';
+}));
+document.querySelectorAll('#riskProfile button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#riskProfile button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');Alloc.risk=b.dataset.risk;
+}));
+const nSlider=document.getElementById('nAssets');
+nSlider.addEventListener('input',()=>{Alloc.n=+nSlider.value;document.getElementById('nAssetsVal').textContent=Alloc.n;});
+
+const capInput=document.getElementById('capInput');
+capInput.addEventListener('blur',()=>{const v=parseMoney(capInput.value);capInput.value=v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});});
+
+function runAllocator(){
+  const cap=parseMoney(capInput.value);
+  if(cap<50){toast('error','Valor muito baixo','Informe pelo menos R$ 50,00');return;}
+  const n=Alloc.n, risk=Alloc.risk;
+
+  // pool conforme perfil
+  let pool=[...STOCKS];
+  if(risk==='conservador') pool=pool.filter(s=>s.risk==='Baixo'||s.risk==='Médio');
+  // arrojado/moderado usam tudo
+
+  // peso = score + tilt DY, penalizado por risco conforme perfil
+  const dyTilt=risk==='conservador'?0.5:risk==='moderado'?0.35:0.2;
+  pool=pool.map(s=>{
+    const base=s.score*(1-dyTilt)+(s.dy/13)*100*dyTilt;
+    const riskMult=risk==='conservador'?1/(s.beta+0.3):risk==='arrojado'?1:1/(s.beta+0.6);
+    return {s,w:base*riskMult};
+  }).sort((a,b)=>b.w-a.w);
+
+  // seleciona n com no máx 2 por setor (diversificação)
+  const sel=[],bySector={};
+  for(const it of pool){
+    if(sel.length>=n)break;
+    bySector[it.s.s]=bySector[it.s.s]||0;
+    if(bySector[it.s.s]>=2 && sel.length<n)continue;
+    sel.push(it);bySector[it.s.s]++;
+  }
+  for(const it of pool){if(sel.length>=n)break;if(!sel.find(x=>x.s.t===it.s.t)){sel.push(it);}}
+
+  // normaliza pesos com teto de 28%
+  let weights=sel.map(x=>x.w);const sum=weights.reduce((a,b)=>a+b,0);
+  weights=weights.map(w=>w/sum);
+  const CAP=0.28;weights=weights.map(w=>Math.min(w,CAP));
+  const s2=weights.reduce((a,b)=>a+b,0);weights=weights.map(w=>w/s2);
+
+  // monta com quantidades inteiras
+  let used=0;
+  const allocs=sel.map((x,i)=>{
+    const tgt=cap*weights[i];
+    const qty=Math.max(0,Math.floor(tgt/x.s.px));
+    const val=qty*x.s.px;used+=val;
+    return {s:x.s,weight:weights[i],qty,val,income:val*x.s.dy/100};
+  }).filter(a=>a.qty>0);
+  used=allocs.reduce((a,b)=>a+b.val,0);
+  const cash=cap-used;
+
+  const wDy=used>0?allocs.reduce((a,al)=>a+(al.val/used)*al.s.dy,0):0;
+  const incomeYear=allocs.reduce((a,al)=>a+al.income,0);
+  const wBeta=used>0?allocs.reduce((a,al)=>a+(al.val/used)*al.s.beta,0):0;
+  const riskLabel=wBeta<0.7?'Baixo':wBeta<1.0?'Médio':'Elevado';
+  const nSec=new Set(allocs.map(a=>a.s.s)).size;
+
+  // texto resumo
+  const isMonthly=Alloc.type==='mensal';
+  const period=isMonthly?'por mês':'de uma vez';
+  document.getElementById('allocText').innerHTML=
+    `Distribuição para perfil <strong>${risk}</strong>, aportando <strong>${fmtBRL(cap)}</strong> ${period}, em <strong>${allocs.length} ações</strong> de <strong>${nSec} setores</strong>. `+
+    `O modelo equilibra qualidade (score), dividend yield e diversificação, com teto de 28% por ação. `+
+    `DY ponderado de <strong>${wDy.toFixed(2)}%</strong> e risco <strong>${riskLabel}</strong> (beta ${wBeta.toFixed(2)}). `+
+    (isMonthly
+      ? `Mantendo esse aporte mensal, a renda em dividendos cresce a cada mês — no 1º ano gira em torno de <strong>${fmtBRL(incomeYear*6)}</strong> acumulados (a carteira ainda está sendo formada), tendendo a <strong>${fmtBRL(incomeYear*12)}/ano</strong> quando os 12 aportes estiverem investidos.`
+      : `Renda estimada em dividendos: <strong>${fmtBRL(incomeYear)}/ano</strong> (≈ ${fmtBRL(incomeYear/12)}/mês).`);
+
+  // mini KPIs
+  document.getElementById('sUsed').textContent=fmtShort(used);
+  document.getElementById('sCash').textContent='sobra: '+fmtBRL(cash);
+  document.getElementById('sDy').textContent=wDy.toFixed(2)+'%';
+  if(isMonthly){
+    document.getElementById('sIncomeLbl').textContent='Renda /ano (cheia)';
+    document.getElementById('sIncome').textContent=fmtShort(incomeYear*12);
+    document.getElementById('sIncomeSub').textContent='com 12 aportes';
+  }else{
+    document.getElementById('sIncomeLbl').textContent='Renda / ano';
+    document.getElementById('sIncome').textContent=fmtShort(incomeYear);
+    document.getElementById('sIncomeSub').textContent='≈ '+fmtBRL(incomeYear/12)+'/mês';
+  }
+  document.getElementById('sRisk').textContent=riskLabel;
+
+  // tabela
+  document.getElementById('allocSubTtl').textContent=`${allocs.length} ações · ${isMonthly?'aporte mensal':'aporte único'}`;
+  document.getElementById('incomeCol').textContent=isMonthly?'Renda/mês*':'Renda/ano';
+  const maxVal=Math.max(...allocs.map(a=>a.val));
+  document.getElementById('allocBody').innerHTML=allocs.map(a=>`
+    <tr onclick="openModal('${a.s.t}')">
+      <td class="t-tk">${a.s.t}</td>
+      <td class="t-nm">${a.s.n}</td>
+      <td>${fmtBRL(a.s.px)}</td>
+      <td>${a.qty}</td>
+      <td>${fmtBRL(a.val)}</td>
+      <td>${(a.val/used*100).toFixed(1)}%</td>
+      <td class="up">${isMonthly?fmtShort(a.income/12):fmtShort(a.income)}</td>
+      <td><span class="scorebar"><span class="bar" style="width:54px"><span class="fill" style="width:${a.val/maxVal*100}%"></span></span></span></td>
+    </tr>`).join('');
+
+  document.getElementById('allocResult').classList.add('show');
+  toast('success','Distribuição calculada',`${allocs.length} ações · DY ${wDy.toFixed(1)}%`);
+}
+
+/* ===== NAV ===== */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('page-'+t.dataset.page).classList.add('active');
+  window.scrollTo(0,0);
+}));
+
+/* ===== INIT ===== */
+renderKpis();
+renderRanking();
+renderSectors();
+renderScatter();
+
+/* ================================================================
+   INFO DOS KPIs — explicação em linguagem simples (popover)
+================================================================ */
+const KPI_INFO={
+  kDy:`<span class="pop-ttl">DY Médio da Lista</span>Média do <strong>dividend yield</strong> (rendimento em dividendos) das ações da lista nos últimos 12 meses. Ex.: 8% quer dizer que, para cada <strong>R$ 100</strong> investidos, a empresa pagou cerca de <strong>R$ 8</strong> em dividendos no ano. Quanto maior, mais a ação "paga" a quem investe — mas um DY muito alto também pode ser sinal de alerta.`,
+  kCheap:`<span class="pop-ttl">Descontadas</span>Quantas ações da lista estão <strong>"descontadas" (baratas)</strong> hoje, segundo o termômetro de valuation, que compara os múltiplos atuais (P/L, P/VP, DY) com o histórico do papel e com o setor. Indica que o preço está abaixo do que o papel costuma valer — <strong>não é garantia</strong> de que vai subir.`,
+  kScore:`<span class="pop-ttl">Score Médio</span>Nota média de <strong>qualidade</strong> das empresas, de <strong>0 a 100</strong>. Junta num só número o dividend yield, o preço (P/L), a rentabilidade (ROE), o endividamento e o potencial de valorização. Quanto mais perto de 100, melhor a "saúde" geral do conjunto — é um resumo, não uma recomendação.`,
+  kPot:`<span class="pop-ttl">Potencial Médio</span>Diferença média entre o <strong>preço atual</strong> e o <strong>preço-alvo</strong> estimado das ações. Ex.: +10% indica que, na média, os papéis estão 10% abaixo do alvo projetado (espaço teórico para subir). O preço-alvo é uma <strong>estimativa</strong> e pode não se concretizar.`,
+  sUsed:`<span class="pop-ttl">Investido</span>Quanto do seu aporte foi de fato <strong>aplicado em ações</strong> (em quantidades inteiras). O que não coube vira <strong>"sobra"</strong>: o troco que fica em caixa por não dar para comprar mais uma ação inteira.`,
+  sDy:`<span class="pop-ttl">DY Ponderado</span>O <strong>dividend yield da carteira inteira</strong>, já considerando o peso de cada ação. Estima o rendimento em dividendos do conjunto, e não de uma ação isolada.`,
+  sIncome:`<span class="pop-ttl">Renda em Dividendos</span>Estimativa de <strong>quanto você receberia em dividendos por ano</strong> com essa carteira, com base no yield atual de cada ação. No aporte mensal, mostra a renda "cheia" depois de 12 meses aplicando. É uma projeção, não um valor garantido.`,
+  sRisk:`<span class="pop-ttl">Risco (beta médio)</span>Mede o quanto a carteira <strong>oscila em relação à bolsa</strong>. Beta perto de 1 acompanha o mercado; abaixo de 1 tende a oscilar menos (mais defensiva); acima de 1 oscila mais. É resumido como Baixo, Médio ou Elevado.`
+};
+const IND_INFO={
+  dy:`<span class="pop-ttl">Dividend Yield (DY)</span>Quanto a empresa pagou de <strong>dividendos no último ano</strong> em relação ao preço da ação. Ex.: DY de 8% equivale a cerca de <strong>R$ 8 por ano</strong> para cada R$ 100 investidos. É o "aluguel" que a ação paga a você.`,
+  payout:`<span class="pop-ttl">Payout</span>Fatia do <strong>lucro que a empresa distribui</strong> aos acionistas (em vez de reinvestir). Ex.: payout de 60% = paga 60% do lucro em dividendos. Muito alto (perto de 100%) pode ser difícil de manter no futuro.`,
+  pl:`<span class="pop-ttl">P/L · Preço / Lucro</span>Quantos <strong>anos de lucro</strong> atual seriam necessários para "pagar" o preço da ação. P/L de 8× = você paga 8 vezes o lucro de um ano. Em geral, quanto menor, mais barata a ação parece — mas varia conforme o setor.`,
+  pvp:`<span class="pop-ttl">P/VP · Preço / Valor Patrimonial</span>Compara o preço da ação com o <strong>patrimônio (valor contábil)</strong> da empresa. P/VP de 1,0 = preço igual ao patrimônio; abaixo de 1 costuma indicar ação "descontada"; bem acima de 1, mais "esticada".`,
+  roe:`<span class="pop-ttl">ROE · Retorno sobre Patrimônio</span>Quanto a empresa <strong>lucra em relação ao dinheiro dos sócios</strong>. ROE de 20% = gera R$ 20 de lucro por ano para cada R$ 100 de patrimônio. Quanto maior, mais rentável e eficiente.`,
+  roic:`<span class="pop-ttl">ROIC · Retorno sobre Capital Investido</span>Parecido com o ROE, mas considera <strong>todo o capital usado</strong> (dos sócios e de dívidas). Mostra a eficiência da empresa em gerar lucro com o dinheiro que emprega. Quanto maior, melhor.`,
+  ml:`<span class="pop-ttl">Margem Líquida</span>De cada <strong>R$ 100 que a empresa vende</strong>, quanto sobra de lucro no fim. Margem de 20% = R$ 20 de lucro a cada R$ 100 de receita. Quanto maior, mais lucrativa é a operação.`,
+  dle:`<span class="pop-ttl">Dív/EBITDA · Endividamento</span>Quantos <strong>anos de geração de caixa</strong> (EBITDA) seriam necessários para quitar a dívida. 1× = a dívida equivale a um ano de caixa. Quanto menor, menos endividada e mais segura a empresa.`
+};
+function openKpiPop(btn,key){
+  const pop=document.getElementById('kpiPop');
+  pop.innerHTML=KPI_INFO[key]||IND_INFO[key]||'';
+  pop.classList.add('show');
+  const r=btn.getBoundingClientRect();
+  const pw=pop.offsetWidth,ph=pop.offsetHeight;
+  let left=r.left+r.width/2-pw/2;
+  left=Math.max(10,Math.min(left,window.innerWidth-pw-10));
+  let top=r.bottom+8;
+  if(top+ph>window.innerHeight-10)top=Math.max(10,r.top-ph-8);
+  pop.style.left=left+'px';pop.style.top=top+'px';
+}
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('kpiPop');
+  const btn=e.target.closest('.info-btn,.ind-info');
+  if(btn){
+    e.preventDefault();
+    const key=btn.dataset.info;
+    if(pop.classList.contains('show')&&pop.dataset.cur===key){pop.classList.remove('show');}
+    else{pop.dataset.cur=key;openKpiPop(btn,key);}
+    return;
+  }
+  if(!e.target.closest('#kpiPop'))pop.classList.remove('show');
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const p=document.getElementById('kpiPop');if(p)p.classList.remove('show');}});
+window.addEventListener('scroll',()=>{const p=document.getElementById('kpiPop');if(p)p.classList.remove('show');},true);
+window.addEventListener('resize',()=>{const p=document.getElementById('kpiPop');if(p)p.classList.remove('show');});
+</script>
+</body>
+</html>
