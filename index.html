@@ -428,14 +428,6 @@ body{
         <div class="panel-body" id="sectorBox"></div>
       </div>
     </div>
-
-    <div class="panel" style="margin-top:20px;margin-bottom:0">
-      <div class="panel-head">
-        <h3>💡 Insights das ações</h3>
-        <span class="sub" id="insightsDate">—</span>
-      </div>
-      <div class="panel-body" id="insightsBox"></div>
-    </div>
   </div>
 
   <!-- ============ ALOCADOR ============ -->
@@ -735,22 +727,6 @@ const STOCKS = [
   {t:'EGIE3', n:'Engie Brasil', s:'Energia', px:33.10, ch:0.28, dy:5.3, pl:15.0, pvp:2.7, roe:19.1, roic:14.0, ml:21.3, dle:4.3, payout:55, target:37.00, risk:'Baixo', beta:0.58, hist:[7.8,8.1,8.4,8.6,6.5,5.3]}
 ];
 
-/* ================================================================
-   INSIGHTS — resumos pesquisados manualmente em fontes públicas.
-   Atualizados sob demanda (peça "atualizar insights" no chat).
-================================================================ */
-const INSIGHTS_DATE='06/06/2026';
-const INSIGHTS={
-  PETR4:'Lucro de R$ 32,7 bi no 1T26 e R$ 9 bi em proventos aprovados (data-com 01/06, pagamento em ago/set como JCP). BTG mantém compra com FCF yield ~12%, mas há riscos de ingerência estatal e dependência do petróleo.',
-  VALE3:'Lucro de US$ 1,89 bi no 1T26 (+36%), com produção recorde de minério, cobre e níquel. Vista como uma das mais descontadas do setor; preço-alvo de R$ 104 citado, DY projetado ~6,6%.',
-  ITSA4:'Lucro recorrente de R$ 4,5 bi no 1T26 (+17%), ROE de 20,1% e novo programa de recompra. Perfil conservador e previsível, mas mais de 90% do resultado ainda vem do Itaú.',
-  ITUB4:'Itaú reportou lucro recorrente de R$ 12,28 bi no 1T26 com ROE de 24,8% — um dos bancos mais rentáveis da Bolsa. Tese sólida de qualidade, com remuneração consistente ao acionista.',
-  BBAS3:'1T26 pressionado por provisões elevadas no agronegócio; lucro e dividendos menores que o histórico. Projeção de recuperação para 2026, mas o mercado acompanha com cautela a qualidade do lucro.',
-  BBSE3:'Lucro de R$ 2,2 bi no 1T26 (+11%), acima do esperado, puxado pelo resultado financeiro. Negocia a P/L baixo (~7x) e segue entre as maiores pagadoras, mas o guidance prevê leve queda operacional em 2026.',
-  TAEE11:'1T26 sólido com receita +9,6% e disponibilidade das linhas em ~99,95%. Uma das maiores pagadoras (DY pode chegar a ~9%), mas a alavancagem subiu e há concessões vencendo a partir de 2030.',
-  EGIE3:'Tida como uma das empresas de maior qualidade do setor elétrico, com geração diversificada (hidro, eólica, solar). Costuma negociar com prêmio sobre os pares; alavancagem perto de 3,2x pede atenção.'
-};
-
 /* ===== SCORE (qualidade do papel, 0–100) ===== */
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function calcScore(s){
@@ -822,23 +798,6 @@ function renderKpis(){
 
 /* ===== RENDER: RANKING ===== */
 const RANK_COLS=['Ação','Empresa','Preço','DY%','P/L','P/VP','ROE%','Pot.%','Score','Valuation'];
-function renderInsights(){
-  const box=document.getElementById('insightsBox'); if(!box)return;
-  const dt=document.getElementById('insightsDate'); if(dt) dt.textContent='atualizado em '+INSIGHTS_DATE;
-  box.innerHTML=STOCKS.map(s=>{
-    const txt=INSIGHTS[s.t]||'Sem insight registrado. Peça uma atualização no chat.';
-    return `<div style="padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer" onclick="openModal('${s.t}')">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-        <span style="font-family:var(--font-mono);font-weight:600;color:var(--text-0);font-size:14px">${s.t}</span>
-        <span style="color:var(--text-3);font-size:11px">${s.n}</span>
-        <span style="margin-left:auto">${valTag(s.val.level)}</span>
-      </div>
-      <div style="font-size:13px;line-height:1.55;color:var(--text-1)">${txt}</div>
-    </div>`;
-  }).join('')+`<div style="margin-top:14px;font-size:11px;color:var(--text-3);line-height:1.6">
-    ⚠ Resumos informativos com base em fontes públicas (InfoMoney, Seu Dinheiro, Investidor10, Status Invest e análises de mercado), captados em ${INSIGHTS_DATE}. Não são recomendação de compra ou venda. Para atualizar, peça no chat.</div>`;
-}
-
 function renderRanking(){
   document.getElementById('rankHead').innerHTML=RANK_COLS.map(c=>`<th>${c}</th>`).join('');
   document.getElementById('rankBody').innerHTML=STOCKS.map(s=>`
@@ -1533,7 +1492,7 @@ async function saveMeta(){
 function recomputeAll(rerender=true){
   STOCKS.forEach(s=>{ s.score=calcScore(s); s.potential=(s.target/s.px-1)*100; s.val=valuation(s); });
   STOCKS.sort((a,b)=>{const o={cheap:0,fair:1,rich:2};return o[a.val.level]-o[b.val.level]||b.score-a.score;});
-  if(rerender){ renderKpis(); renderRanking(); renderSectors(); renderScatter(); renderInsights(); renderCarteira(); refreshAllocUI(); }
+  if(rerender){ renderKpis(); renderRanking(); renderSectors(); renderScatter(); renderCarteira(); refreshAllocUI(); }
 }
 
 function refreshSourceUI(){
@@ -1650,7 +1609,6 @@ renderKpis();
 renderRanking();
 renderSectors();
 renderScatter();
-renderInsights();
 (async function initApp(){
   await loadPortfolio();
   await loadMeta();
