@@ -91,6 +91,30 @@ body{
 .panel-body{padding:20px}
 .grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:start}
 
+/* ===== BOTÃO DE INFORMAÇÃO (ⓘ) NOS KPIs ===== */
+.lbl,.mini-kpi .lbl{display:inline-flex;align-items:center;gap:6px}
+.info-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;flex-shrink:0;
+  border-radius:50%;border:1px solid var(--line-2);
+  background:var(--bg-3);color:var(--text-2);
+  font-family:var(--font-body);font-size:11px;font-weight:600;font-style:italic;
+  cursor:pointer;line-height:1;padding:0;transition:all .15s;
+}
+.info-btn:hover,.info-btn:active{background:var(--accent);color:var(--bg-0);border-color:var(--accent)}
+/* área de toque confortável no mobile sem aumentar o visual */
+@media (hover:none){ .info-btn{width:22px;height:22px;font-size:12px} }
+
+/* modal de explicação (reaproveita o estilo de modal) */
+.info-modal-bg{position:fixed;inset:0;background:rgba(6,8,12,.78);backdrop-filter:blur(6px);z-index:160;display:none;align-items:center;justify-content:center;padding:20px}
+.info-modal-bg.active{display:flex;animation:fade .2s}
+.info-modal{background:var(--bg-1);border:1px solid var(--line-2);border-radius:16px;max-width:420px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden}
+.info-modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.info-modal-head h4{font-family:var(--font-display);font-weight:500;font-size:18px;color:var(--text-0)}
+.info-modal-body{padding:20px;font-size:14px;line-height:1.7;color:var(--text-1)}
+.info-modal-body strong{color:var(--text-0)}
+.info-modal-body .ex{margin-top:12px;padding:12px 14px;background:var(--bg-2);border-radius:9px;border:1px solid var(--line);font-size:13px;color:var(--text-2)}
+
 /* ===== VALUATION BADGE ===== */
 .val-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-family:var(--font-mono);
   font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
@@ -359,23 +383,23 @@ body{
 
     <div class="kpis">
       <div class="kpi primary">
-        <div class="lbl">DY Médio da Lista</div>
+        <div class="lbl">DY Médio da Lista <button class="info-btn" onclick="showInfo('dy')" aria-label="O que é isso?">i</button></div>
         <div class="val" id="kDy">—<span class="u">%</span></div>
         <div class="foot">dividend yield 12m</div>
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       </div>
       <div class="kpi">
-        <div class="lbl">Descontadas</div>
+        <div class="lbl">Descontadas <button class="info-btn" onclick="showInfo('cheap')" aria-label="O que é isso?">i</button></div>
         <div class="val" id="kCheap">—</div>
         <div class="foot">de 8 ações</div>
       </div>
       <div class="kpi">
-        <div class="lbl">Score Médio</div>
+        <div class="lbl">Score Médio <button class="info-btn" onclick="showInfo('score')" aria-label="O que é isso?">i</button></div>
         <div class="val" id="kScore">—</div>
         <div class="foot">qualidade · 0–100</div>
       </div>
       <div class="kpi">
-        <div class="lbl">Potencial Médio</div>
+        <div class="lbl">Potencial Médio <button class="info-btn" onclick="showInfo('pot')" aria-label="O que é isso?">i</button></div>
         <div class="val" id="kPot">—<span class="u">%</span></div>
         <div class="foot">vs preço-alvo</div>
       </div>
@@ -474,10 +498,10 @@ body{
             <p id="allocText">—</p>
           </div>
           <div class="alloc-summary">
-            <div class="mini-kpi"><div class="lbl">Investido agora</div><div class="val" id="sUsed">—</div><div class="sub" id="sCash">—</div></div>
-            <div class="mini-kpi"><div class="lbl">DY ponderado</div><div class="val" id="sDy">—</div><div class="sub">yield carteira</div></div>
-            <div class="mini-kpi"><div class="lbl" id="sIncomeLbl">Renda / ano</div><div class="val up" id="sIncome">—</div><div class="sub" id="sIncomeSub">—</div></div>
-            <div class="mini-kpi"><div class="lbl">Risco</div><div class="val" id="sRisk">—</div><div class="sub">beta médio</div></div>
+            <div class="mini-kpi"><div class="lbl">Investido agora <button class="info-btn" onclick="showInfo('invested')" aria-label="?">i</button></div><div class="val" id="sUsed">—</div><div class="sub" id="sCash">—</div></div>
+            <div class="mini-kpi"><div class="lbl">DY ponderado <button class="info-btn" onclick="showInfo('wdy')" aria-label="?">i</button></div><div class="val" id="sDy">—</div><div class="sub">yield carteira</div></div>
+            <div class="mini-kpi"><div class="lbl" id="sIncomeLbl">Renda / ano <button class="info-btn" onclick="showInfo('income')" aria-label="?">i</button></div><div class="val up" id="sIncome">—</div><div class="sub" id="sIncomeSub">—</div></div>
+            <div class="mini-kpi"><div class="lbl">Risco <button class="info-btn" onclick="showInfo('risk')" aria-label="?">i</button></div><div class="val" id="sRisk">—</div><div class="sub">beta médio</div></div>
           </div>
           <div class="panel" style="margin-bottom:0">
             <div class="panel-head"><h3>Comprar neste aporte</h3><span class="sub" id="allocSubTtl">—</span></div>
@@ -504,10 +528,20 @@ body{
     </div>
 
     <div class="alloc-summary" style="margin-bottom:20px">
-      <div class="mini-kpi"><div class="lbl">Total aportado</div><div class="val" id="pTotal">R$ 0</div><div class="sub" id="pAportes">0 aportes</div></div>
-      <div class="mini-kpi"><div class="lbl">Valor atual</div><div class="val" id="pCurrent">R$ 0</div><div class="sub" id="pResult">—</div></div>
-      <div class="mini-kpi"><div class="lbl">DY da carteira</div><div class="val up" id="pDy">—</div><div class="sub">yield ponderado</div></div>
-      <div class="mini-kpi"><div class="lbl">Renda projetada</div><div class="val up" id="pIncome">R$ 0</div><div class="sub">por ano</div></div>
+      <div class="mini-kpi"><div class="lbl">Total aportado <button class="info-btn" onclick="showInfo('total')" aria-label="?">i</button></div><div class="val" id="pTotal">R$ 0</div><div class="sub" id="pAportes">0 aportes</div></div>
+      <div class="mini-kpi"><div class="lbl">Valor atual <button class="info-btn" onclick="showInfo('current')" aria-label="?">i</button></div><div class="val" id="pCurrent">R$ 0</div><div class="sub" id="pResult">—</div></div>
+      <div class="mini-kpi"><div class="lbl">Dividendos recebidos <button class="info-btn" onclick="showInfo('received')" aria-label="?">i</button></div><div class="val up" id="pReceived">R$ 0</div><div class="sub" id="pReceivedSub">total acumulado</div></div>
+      <div class="mini-kpi"><div class="lbl">Renda projetada <button class="info-btn" onclick="showInfo('income')" aria-label="?">i</button></div><div class="val up" id="pIncome">R$ 0</div><div class="sub">por ano · DY <span id="pDy">—</span></div></div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      <button class="btn btn-primary" style="flex:0 1 auto" onclick="openPosModal()">+ Adicionar / editar posição</button>
+      <button class="btn" style="flex:0 1 auto;background:var(--bg-3);color:var(--up)" onclick="openDivModal()">+ Registrar dividendo recebido</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Evolução do patrimônio</h3><span class="sub">aportado × valor atual</span></div>
+      <div class="panel-body"><div class="chart-box sm"><canvas id="evolChart"></canvas></div></div>
     </div>
 
     <div class="panel">
@@ -528,6 +562,11 @@ body{
           <tbody id="portfBody"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Dividendos recebidos</h3><span class="sub" id="divCount">—</span></div>
+      <div class="panel-body" id="divLog" style="font-family:var(--font-mono);font-size:12px"></div>
     </div>
 
     <div class="panel" style="margin-bottom:0">
@@ -598,6 +637,51 @@ body{
         <p id="mNarr">—</p>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="info-modal-bg" id="posModal" onclick="if(event.target===this)closePosModal()">
+  <div class="info-modal">
+    <div class="info-modal-head"><h4>Adicionar / editar posição</h4><button class="modal-close" onclick="closePosModal()">×</button></div>
+    <div class="info-modal-body">
+      <p style="font-size:12.5px;color:var(--text-2);margin-bottom:16px">Lance uma ação que você comprou por fora, ou ajuste uma posição existente. Os valores substituem o total atual daquela ação.</p>
+      <div class="field-lbl">Ação</div>
+      <select id="posTicker" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);padding:12px;border-radius:9px;font-family:var(--font-mono);font-size:14px;margin-bottom:14px"></select>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1"><div class="field-lbl">Quantidade total</div><input type="text" inputmode="numeric" id="posQty" placeholder="0" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);padding:12px;border-radius:9px;font-size:16px"></div>
+        <div style="flex:1"><div class="field-lbl">Total investido (R$)</div><input type="text" inputmode="decimal" id="posInv" placeholder="0,00" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);padding:12px;border-radius:9px;font-size:16px"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button class="btn btn-primary" onclick="savePosition()">Salvar posição</button>
+        <button class="btn" style="background:var(--bg-3);color:var(--down)" onclick="removePosition()">Remover</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="info-modal-bg" id="divModal" onclick="if(event.target===this)closeDivModal()">
+  <div class="info-modal">
+    <div class="info-modal-head"><h4>Registrar dividendo recebido</h4><button class="modal-close" onclick="closeDivModal()">×</button></div>
+    <div class="info-modal-body">
+      <p style="font-size:12.5px;color:var(--text-2);margin-bottom:16px">Lance os proventos que caíram na sua conta. Isso monta seu histórico de renda passiva <strong>real</strong> (diferente da renda apenas projetada).</p>
+      <div class="field-lbl">Ação</div>
+      <select id="divTicker" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);padding:12px;border-radius:9px;font-family:var(--font-mono);font-size:14px;margin-bottom:14px"></select>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1"><div class="field-lbl">Valor recebido (R$)</div><input type="text" inputmode="decimal" id="divValue" placeholder="0,00" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);padding:12px;border-radius:9px;font-size:16px"></div>
+        <div style="flex:1"><div class="field-lbl">Data</div><input type="date" id="divDate" style="width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);padding:12px;border-radius:9px;font-size:16px"></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:18px" onclick="saveDividend()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="info-modal-bg" id="infoModal" onclick="if(event.target===this)closeInfo()">
+  <div class="info-modal">
+    <div class="info-modal-head">
+      <h4 id="infoTitle">—</h4>
+      <button class="modal-close" onclick="closeInfo()">×</button>
+    </div>
+    <div class="info-modal-body" id="infoBody">—</div>
   </div>
 </div>
 
@@ -792,6 +876,128 @@ function closeModal(){document.getElementById('modalBg').classList.remove('activ
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
 /* ================================================================
+   EXPLICAÇÕES DOS INDICADORES (linguagem simples, para leigos)
+================================================================ */
+const INFO_TEXT={
+  dy:{t:'DY Médio da Lista',b:'<strong>DY</strong> quer dizer <strong>Dividend Yield</strong> — em português, o "rendimento de dividendos".<br><br>É quanto uma ação pagou de dividendos (aquela parte do lucro distribuída aos donos das ações) nos últimos 12 meses, em relação ao preço dela. Quanto maior, mais ela "rende" em proventos.<br><br>Este número é a <strong>média</strong> de todas as ações da lista.',
+     ex:'Exemplo: um DY de 9% significa que, para cada R$ 100 investidos, a ação pagou cerca de R$ 9 em dividendos no ano.'},
+  cheap:{t:'Ações Descontadas',b:'Mostra <strong>quantas ações da lista</strong> estão, neste momento, com preço considerado <strong>baixo (barato)</strong> em relação ao histórico delas e ao setor.<br><br>É o resultado do "termômetro" de cada ação: Descontada (barata), Preço justo, ou Esticada (cara).',
+     ex:'Exemplo: "4 de 8" significa que, das 8 ações, 4 estão com preço descontado hoje. Lembre-se: barato não é garantia de boa compra — às vezes está barato por um motivo.'},
+  score:{t:'Score Médio',b:'O <strong>Score</strong> é uma nota de <strong>0 a 100</strong> que o painel calcula para resumir a "qualidade" de cada ação, juntando vários fatores: dividend yield, preço atual, lucratividade (ROE), endividamento e potencial.<br><br>Quanto maior a nota, melhor a ação se sai nesses critérios combinados. Este valor é a média de todas.',
+     ex:'É só uma estimativa para comparar as ações entre si — não é recomendação de compra.'},
+  pot:{t:'Potencial Médio',b:'É a diferença entre o <strong>preço atual</strong> da ação e o <strong>preço-alvo</strong> (o valor que analistas estimam que ela poderia atingir).<br><br>Um potencial positivo sugere que, na visão dos analistas, a ação teria espaço para subir. Este número é a média da lista.',
+     ex:'Exemplo: +20% significa que o preço-alvo está 20% acima do preço de hoje. É uma projeção, não uma certeza.'},
+  invested:{t:'Investido agora',b:'O total em reais que <strong>este aporte</strong> usou para comprar ações. Como só dá para comprar ações inteiras, costuma sobrar um trocado (mostrado como "sobra").',
+     ex:'Exemplo: se você aportou R$ 1.000 e deu para comprar R$ 926 em ações, sobram R$ 74 para o próximo aporte.'},
+  wdy:{t:'DY ponderado',b:'É o <strong>dividend yield médio</strong> da carteira, mas "ponderado" — ou seja, leva em conta <strong>quanto você tem de cada ação</strong>. Ações em que você investiu mais pesam mais nessa média.',
+     ex:'Dá uma ideia realista de quanto a sua carteira inteira rende em dividendos por ano.'},
+  income:{t:'Renda em dividendos',b:'Uma <strong>estimativa</strong> de quanto você receberia em dividendos por ano, com base no que tem na carteira e no dividend yield de cada ação.',
+     ex:'Exemplo: R$ 1.200/ano equivale a cerca de R$ 100 por mês em proventos. É aproximado — os valores reais variam conforme cada empresa decide pagar.'},
+  risk:{t:'Risco (beta médio)',b:'Mede o quanto a sua carteira <strong>balança junto com o mercado</strong>, usando uma medida chamada <strong>beta</strong>.<br><br>Beta perto de 1 = oscila parecido com a bolsa. Abaixo de 1 = tende a oscilar menos (mais calmo). Acima de 1 = oscila mais (mais agitado).',
+     ex:'Classificamos como Baixo, Médio ou Elevado para facilitar. Risco menor costuma significar menos sustos, mas também menos emoção nas altas.'},
+  total:{t:'Total aportado',b:'A <strong>soma de todo o dinheiro</strong> que você já colocou na carteira, somando todos os aportes registrados ao longo do tempo.',
+     ex:'É o seu "custo" — quanto saiu do seu bolso até agora.'},
+  current:{t:'Valor atual',b:'Quanto a sua carteira <strong>vale hoje</strong>, multiplicando a quantidade de cada ação pelo preço atual delas.<br><br>Comparado ao total aportado, mostra se você está com lucro (verde) ou prejuízo (vermelho) no papel.',
+     ex:'Exemplo: aportou R$ 1.000 e hoje vale R$ 1.080 → +R$ 80 (+8%). É lucro "no papel" até você vender.'},
+  received:{t:'Dividendos recebidos',b:'A <strong>soma dos proventos que você realmente recebeu</strong> e registrou — diferente da "renda projetada", que é só uma estimativa do futuro.<br><br>É o dinheiro de dividendos que de fato caiu na sua conta ao longo do tempo.',
+     ex:'Use o botão "Registrar dividendo recebido" cada vez que cair um provento. Assim você acompanha sua renda passiva real crescendo.'}
+};
+
+function showInfo(key){
+  const info=INFO_TEXT[key]; if(!info)return;
+  document.getElementById('infoTitle').textContent=info.t;
+  document.getElementById('infoBody').innerHTML=info.b+(info.ex?`<div class="ex">💡 ${info.ex}</div>`:'');
+  document.getElementById('infoModal').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeInfo(){ document.getElementById('infoModal').classList.remove('active'); document.body.style.overflow=''; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeInfo(); });
+
+/* ===== DIVIDENDOS RECEBIDOS (total) ===== */
+function dividendsTotal(){ return (Portfolio.dividends||[]).reduce((a,d)=>a+(d.value||0),0); }
+
+/* ===== ADICIONAR / EDITAR POSIÇÃO MANUAL ===== */
+function fillTickerSelect(id){
+  const sel=document.getElementById(id);
+  sel.innerHTML=STOCKS.slice().sort((a,b)=>a.t.localeCompare(b.t)).map(s=>`<option value="${s.t}">${s.t} · ${s.n}</option>`).join('');
+}
+function openPosModal(){
+  fillTickerSelect('posTicker');
+  const sel=document.getElementById('posTicker');
+  sel.onchange=()=>{ const p=Portfolio.positions[sel.value]; document.getElementById('posQty').value=p?p.qty:''; document.getElementById('posInv').value=p?p.invested.toLocaleString('pt-BR',{minimumFractionDigits:2}):''; };
+  sel.onchange();
+  document.getElementById('posModal').classList.add('active'); document.body.style.overflow='hidden';
+}
+function closePosModal(){ document.getElementById('posModal').classList.remove('active'); document.body.style.overflow=''; }
+function savePosition(){
+  const tk=document.getElementById('posTicker').value;
+  const qty=parseInt(String(document.getElementById('posQty').value).replace(/\D/g,''))||0;
+  const inv=parseMoney(document.getElementById('posInv').value);
+  if(qty<=0){ toast('error','Quantidade inválida','Informe quantas cotas você tem.'); return; }
+  Portfolio.positions[tk]={qty,invested:inv};
+  snapshotPortfolio(); savePortfolio(); renderCarteira(); refreshAllocUI(); closePosModal();
+  toast('success','Posição salva',`${tk}: ${qty} cotas`);
+}
+function removePosition(){
+  const tk=document.getElementById('posTicker').value;
+  if(!Portfolio.positions[tk]){ toast('info','Sem posição',`Você não tem ${tk} na carteira.`); return; }
+  delete Portfolio.positions[tk];
+  snapshotPortfolio(); savePortfolio(); renderCarteira(); refreshAllocUI(); closePosModal();
+  toast('info','Posição removida',tk);
+}
+
+/* ===== REGISTRAR DIVIDENDO RECEBIDO ===== */
+function openDivModal(){
+  fillTickerSelect('divTicker');
+  document.getElementById('divValue').value='';
+  document.getElementById('divDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('divModal').classList.add('active'); document.body.style.overflow='hidden';
+}
+function closeDivModal(){ document.getElementById('divModal').classList.remove('active'); document.body.style.overflow=''; }
+function saveDividend(){
+  const tk=document.getElementById('divTicker').value;
+  const value=parseMoney(document.getElementById('divValue').value);
+  const date=document.getElementById('divDate').value||new Date().toISOString().slice(0,10);
+  if(value<=0){ toast('error','Valor inválido','Informe quanto recebeu.'); return; }
+  Portfolio.dividends=Portfolio.dividends||[];
+  Portfolio.dividends.push({t:tk,value,date});
+  savePortfolio(); renderCarteira(); closeDivModal();
+  toast('success','Dividendo registrado',`${tk}: ${fmtBRL(value)}`);
+}
+function removeDividend(idx){
+  if(!Portfolio.dividends||!Portfolio.dividends[idx])return;
+  const d=Portfolio.dividends[idx];
+  Portfolio.dividends.splice(idx,1);
+  savePortfolio(); renderCarteira();
+  toast('info','Dividendo removido',`${d.t}: ${fmtBRL(d.value)}`);
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closePosModal(); closeDivModal(); } });
+
+/* ===== GRÁFICO DE EVOLUÇÃO ===== */
+let evolChart=null;
+function renderEvolChart(){
+  const el=document.getElementById('evolChart'); if(!el)return;
+  const snaps=Portfolio.snapshots||[];
+  if(evolChart) evolChart.destroy();
+  if(snaps.length===0){
+    // sem dados ainda
+    evolChart=new Chart(el,{type:'line',data:{labels:['—'],datasets:[{data:[0]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Faça aportes para ver a evolução',color:'#5a6677',font:{size:11}}},scales:{x:{grid},y:{grid}}}});
+    return;
+  }
+  const labels=snaps.map(s=>{const d=new Date(s.date+'T00:00');return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});});
+  evolChart=new Chart(el,{type:'line',
+    data:{labels,datasets:[
+      {label:'Aportado',data:snaps.map(s=>s.invested),borderColor:'#5b9eff',backgroundColor:'rgba(91,158,255,.08)',borderWidth:2,tension:.3,fill:true,pointRadius:3},
+      {label:'Valor atual',data:snaps.map(s=>s.current),borderColor:'#d4a574',backgroundColor:'rgba(212,165,116,.10)',borderWidth:2,tension:.3,fill:true,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:8,padding:12,font:{size:10}}},
+        tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtBRL(c.parsed.y)}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid,ticks:{font:{size:9},callback:v=>'R$ '+(v>=1000?(v/1000).toFixed(1)+'k':v)}}}}
+  });
+}
+
+/* ================================================================
    ALOCADOR — distribui o aporte (mensal ou único)
 ================================================================ */
 const Alloc={type:'mensal',risk:'moderado',n:6};
@@ -824,14 +1030,25 @@ const Store={
 /* ================================================================
    PORTFOLIO — carteira acumulada + histórico de aportes
 ================================================================ */
-const Portfolio={ positions:{}, aportes:[] };
+const Portfolio={ positions:{}, aportes:[], dividends:[], snapshots:[] };
 
 async function loadPortfolio(){
   const p=await Store.get('div_portfolio_v1');
-  if(p){ Portfolio.positions=p.positions||{}; Portfolio.aportes=p.aportes||[]; }
+  if(p){ Portfolio.positions=p.positions||{}; Portfolio.aportes=p.aportes||[]; Portfolio.dividends=p.dividends||[]; Portfolio.snapshots=p.snapshots||[]; }
   refreshAllocUI(); renderCarteira();
 }
-async function savePortfolio(){ await Store.set('div_portfolio_v1',{positions:Portfolio.positions,aportes:Portfolio.aportes}); }
+async function savePortfolio(){ await Store.set('div_portfolio_v1',{positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots}); }
+
+// registra um "retrato" do patrimônio na data de hoje (para o gráfico de evolução)
+function snapshotPortfolio(){
+  const {invested,current}=portfolioTotals();
+  const today=new Date().toISOString().slice(0,10);
+  Portfolio.snapshots=Portfolio.snapshots||[];
+  const last=Portfolio.snapshots[Portfolio.snapshots.length-1];
+  const entry={date:today,invested:+invested.toFixed(2),current:+current.toFixed(2)};
+  if(last && last.date===today) Portfolio.snapshots[Portfolio.snapshots.length-1]=entry; // 1 por dia
+  else Portfolio.snapshots.push(entry);
+}
 
 function portfolioTotals(){
   let invested=0,current=0,incomeYr=0,wDyNum=0;
@@ -965,6 +1182,7 @@ function runAllocator(){
     p.qty+=a.qty; p.invested+=a.val;
     Portfolio.positions[a.s.t]=p;
   });
+  snapshotPortfolio();
   savePortfolio();
   refreshAllocUI(); renderCarteira();
   toast('success','Aporte registrado',`${allocs.length} ações · somado à sua carteira`);
@@ -1002,14 +1220,22 @@ function renderCarteira(){
   document.getElementById('pCurrent').textContent=fmtShort(current);
   const res=current-invested, resPct=invested>0?(res/invested*100):0;
   document.getElementById('pResult').innerHTML=`<span class="${res>=0?'up':'down'}">${res>=0?'+':''}${fmtBRL(res)} (${resPct>=0?'+':''}${resPct.toFixed(1)}%)</span>`;
-  document.getElementById('pDy').textContent=wDy.toFixed(2)+'%';
+  const pdy=document.getElementById('pDy'); if(pdy) pdy.textContent=wDy.toFixed(1)+'%';
   document.getElementById('pIncome').textContent=fmtShort(incomeYr);
+  // dividendos recebidos (real)
+  const totalDiv=dividendsTotal();
+  const elRec=document.getElementById('pReceived');
+  if(elRec){
+    elRec.textContent=fmtShort(totalDiv);
+    const yieldOnCost=invested>0?(totalDiv/invested*100):0;
+    document.getElementById('pReceivedSub').textContent=(Portfolio.dividends||[]).length+' lançamentos · '+yieldOnCost.toFixed(1)+'% do aportado';
+  }
 
   const ideal=idealWeights(Alloc.risk,Alloc.n);
   const idealMap={};ideal.forEach(i=>idealMap[i.s.t]=i.target);
 
   if(rows.length===0){
-    document.getElementById('portfBody').innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:40px">Nenhum aporte ainda. Calcule uma distribuição no Alocador para começar.</td></tr>`;
+    document.getElementById('portfBody').innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:40px">Nenhuma posição ainda. Calcule um aporte no Alocador ou use "Adicionar posição".</td></tr>`;
   }else{
     document.getElementById('portfBody').innerHTML=rows.map(r=>{
       const pctNow=current>0?(r.current/current*100):0;
@@ -1028,6 +1254,25 @@ function renderCarteira(){
       </tr>`;
     }).join('');
   }
+
+  // log de dividendos recebidos
+  const divs=Portfolio.dividends||[];
+  document.getElementById('divCount').textContent=divs.length+(divs.length===1?' lançamento':' lançamentos');
+  if(divs.length===0){
+    document.getElementById('divLog').innerHTML=`<span style="color:var(--text-3)">Nenhum dividendo registrado. Use o botão "Registrar dividendo recebido".</span>`;
+  }else{
+    document.getElementById('divLog').innerHTML=[...divs].reverse().map((d,i)=>{
+      const realIdx=divs.length-1-i;
+      const dt=new Date(d.date+'T00:00').toLocaleDateString('pt-BR');
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center">
+        <span><span style="color:var(--accent)">${dt}</span> · <strong style="color:var(--text-1)">${d.t}</strong></span>
+        <span style="display:flex;align-items:center;gap:12px"><span class="up">${fmtBRL(d.value)}</span>
+        <button class="info-btn" style="border-color:var(--down);color:var(--down)" onclick="event.stopPropagation();removeDividend(${realIdx})" title="Excluir">×</button></span>
+      </div>`;
+    }).join('');
+  }
+
+  renderEvolChart();
 
   document.getElementById('aporteCount').textContent=Portfolio.aportes.length+' registros';
   if(Portfolio.aportes.length===0){
@@ -1050,6 +1295,9 @@ function exportCSV(){
   Portfolio.aportes.forEach(a=>{
     a.items.forEach(i=>lines.push(['aporte',a.date,i.t,i.qty,i.val.toFixed(2),(i.px||0).toFixed(2),a.risk,a.mode]));
   });
+  (Portfolio.dividends||[]).forEach(d=>{
+    lines.push(['dividendo',d.date,d.t,'',Number(d.value).toFixed(2),'','','']);
+  });
   const csv=lines.map(r=>r.join(';')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
@@ -1067,32 +1315,34 @@ function importCSV(input){
       const lines=text.split(/\r?\n/).filter(l=>l.trim());
       const header=lines[0].toLowerCase();
       if(!header.includes('ticker')){toast('error','CSV inválido','Cabeçalho não reconhecido');return;}
-      const byDate={};
+      const byDate={}; const divs=[];
       for(let i=1;i<lines.length;i++){
         const c=lines[i].split(';'); if(c.length<5)continue;
-        const data=c[1],ticker=c[2],qtd=c[3],valor=c[4],px=c[5],perfil=c[6],modo=c[7];
+        const tipo=c[0],data=c[1],ticker=c[2],qtd=c[3],valor=c[4],px=c[5],perfil=c[6],modo=c[7];
+        if(tipo==='dividendo'){ divs.push({t:ticker,value:parseFloat(valor)||0,date:data}); continue; }
         if(!byDate[data])byDate[data]={date:data,type:'importado',risk:perfil||'moderado',mode:modo||'rebalance',total:0,items:[]};
         const q=parseInt(qtd)||0, v=parseFloat(valor)||0;
         byDate[data].items.push({t:ticker,qty:q,val:v,px:parseFloat(px)||0});
         byDate[data].total+=v;
       }
-      Portfolio.positions={}; Portfolio.aportes=[];
+      Portfolio.positions={}; Portfolio.aportes=[]; Portfolio.dividends=divs; Portfolio.snapshots=[];
       Object.values(byDate).forEach(a=>{
         Portfolio.aportes.push(a);
         a.items.forEach(it=>{const p=Portfolio.positions[it.t]||{qty:0,invested:0};p.qty+=it.qty;p.invested+=it.val;Portfolio.positions[it.t]=p;});
       });
+      snapshotPortfolio();
       savePortfolio(); refreshAllocUI(); renderCarteira();
-      toast('success','Carteira importada',`${Portfolio.aportes.length} aportes carregados`);
+      toast('success','Carteira importada',`${Portfolio.aportes.length} aportes · ${divs.length} dividendos`);
     }catch(err){toast('error','Falha ao importar',err.message);}
   };
   reader.readAsText(file); input.value='';
 }
 function resetPortfolio(){
-  if(!confirm('Apagar todo o histórico de aportes e a carteira? Isso não pode ser desfeito (exporte um backup antes).'))return;
-  Portfolio.positions={}; Portfolio.aportes=[];
+  if(!confirm('Apagar TODA a carteira (posições, aportes, dividendos e evolução)? Isso não pode ser desfeito — exporte um backup antes.'))return;
+  Portfolio.positions={}; Portfolio.aportes=[]; Portfolio.dividends=[]; Portfolio.snapshots=[];
   Store.del('div_portfolio_v1'); savePortfolio();
   refreshAllocUI(); renderCarteira();
-  toast('info','Carteira limpa','Histórico apagado');
+  toast('info','Carteira limpa','Tudo apagado');
 }
 
 /* ================================================================
@@ -1107,7 +1357,7 @@ let DATA_SRC='captura manual · Status Invest / Investidor10';
 async function loadMeta(){
   const m=await Store.get('div_meta_v1');
   if(m){
-    if(m.prices){ STOCKS.forEach(s=>{ if(m.prices[s.t]!=null){ s.px=m.prices[s.t]; } }); }
+    if(m.prices){ STOCKS.forEach(s=>{ const mp=m.prices[s.t]; if(mp!=null){ if(typeof mp==='object'){ if(mp.px!=null)s.px=mp.px; if(mp.pl!=null)s.pl=mp.pl; if(mp.pvp!=null)s.pvp=mp.pvp; } else { s.px=mp; } } }); }
     if(m.date) DATA_DATE=m.date;
     if(m.src) DATA_SRC=m.src;
     recomputeAll(false);
@@ -1115,7 +1365,7 @@ async function loadMeta(){
   refreshSourceUI();
 }
 async function saveMeta(){
-  const prices={}; STOCKS.forEach(s=>prices[s.t]=s.px);
+  const prices={}; STOCKS.forEach(s=>prices[s.t]={px:s.px,pl:s.pl,pvp:s.pvp});
   await Store.set('div_meta_v1',{prices,date:DATA_DATE,src:DATA_SRC});
 }
 
@@ -1140,13 +1390,13 @@ async function requestUpdate(){
   const tickers=STOCKS.map(s=>s.t);
   let got={}, via='', diag='';
 
-  // tentativa 1: função serverless do Netlify (token escondido → todas as ações)
+  // tentativa 1: função serverless (token escondido → todas as ações)
   try{
     const r=await fetch('/api/quotes?tickers='+tickers.join(','),{signal:AbortSignal.timeout?AbortSignal.timeout(9000):undefined});
     const raw=await r.text();
     let d={}; try{ d=JSON.parse(raw); }catch(_){}
     if(r.ok && d.results){
-      d.results.forEach(q=>{ const p=q.price??q.regularMarketPrice; if(p>0) got[q.symbol]=+(+p).toFixed(2); });
+      d.results.forEach(q=>{ const p=q.price??q.regularMarketPrice; if(p>0) got[q.symbol]={px:+(+p).toFixed(2), pl:(q.pl>0?+(+q.pl).toFixed(1):null), pvp:(q.pvp>0?+(+q.pvp).toFixed(2):null)}; });
       if(Object.keys(got).length>0) via='função segura · brapi.dev (B3)';
       else diag='A função respondeu, mas sem preços. Verifique se o token brapi é válido.';
     }else if(r.status===404){
@@ -1164,7 +1414,7 @@ async function requestUpdate(){
       const r=await fetch('https://brapi.dev/api/quote/'+tickers.join(','),{signal:AbortSignal.timeout?AbortSignal.timeout(8000):undefined});
       if(r.ok){
         const d=await r.json();
-        (d.results||[]).forEach(q=>{ if(q.regularMarketPrice>0) got[q.symbol]=+q.regularMarketPrice.toFixed(2); });
+        (d.results||[]).forEach(q=>{ if(q.regularMarketPrice>0) got[q.symbol]={px:+q.regularMarketPrice.toFixed(2),pl:null,pvp:null}; });
         if(Object.keys(got).length>0) via='brapi.dev (parcial · 4 ações)';
       }
     }catch(e){}
@@ -1173,7 +1423,7 @@ async function requestUpdate(){
   btn.classList.remove('loading');
   const n=Object.keys(got).length;
   if(n>0){
-    STOCKS.forEach(s=>{ if(got[s.t]!=null) s.px=got[s.t]; });
+    STOCKS.forEach(s=>{ const g=got[s.t]; if(g){ s.px=g.px; if(g.pl!=null)s.pl=g.pl; if(g.pvp!=null)s.pvp=g.pvp; } });
     DATA_DATE=new Date().toLocaleDateString('pt-BR');
     DATA_SRC='cotações ao vivo · '+via;
     recomputeAll(true); saveMeta(); refreshSourceUI();
