@@ -31,14 +31,21 @@ export async function onRequest(context) {
     // busca 1 ticker por vez (limite do plano gratuito brapi)
     for (const tk of tickers) {
       try {
-        const apiUrl = 'https://brapi.dev/api/quote/' + encodeURIComponent(tk) + '?token=' + encodeURIComponent(token);
+        const apiUrl = 'https://brapi.dev/api/quote/' + encodeURIComponent(tk) +
+                       '?fundamental=true&token=' + encodeURIComponent(token);
         const r = await fetch(apiUrl);
         const txt = await r.text();
         let d = {};
         try { d = JSON.parse(txt); } catch (_) {}
         if (r.status === 200 && d.results && d.results[0] && d.results[0].regularMarketPrice > 0) {
           const q = d.results[0];
-          results.push({ symbol: q.symbol, price: q.regularMarketPrice, change: q.regularMarketChangePercent });
+          results.push({
+            symbol: q.symbol,
+            price: q.regularMarketPrice,
+            change: q.regularMarketChangePercent,
+            pl: (typeof q.priceEarnings === 'number' ? q.priceEarnings : null),
+            pvp: (typeof q.priceToBook === 'number' ? q.priceToBook : null)
+          });
         } else {
           errors.push(tk + ': ' + ((d && d.message) ? d.message : ('status ' + r.status)));
         }
