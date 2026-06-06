@@ -428,6 +428,14 @@ body{
         <div class="panel-body" id="sectorBox"></div>
       </div>
     </div>
+
+    <div class="panel" style="margin-top:20px;margin-bottom:0">
+      <div class="panel-head">
+        <h3>💡 Insights das ações</h3>
+        <span class="sub" id="insightsDate">—</span>
+      </div>
+      <div class="panel-body" id="insightsBox"></div>
+    </div>
   </div>
 
   <!-- ============ ALOCADOR ============ -->
@@ -647,8 +655,8 @@ body{
     <div class="modal-body">
       <div class="detail-top">
         <div class="dstat"><div class="l">Preço atual</div><div class="v" id="mPrice">—</div><div class="s" id="mChange">—</div></div>
-        <div class="dstat"><div class="l">Preço-alvo</div><div class="v" id="mTarget">—</div><div class="s" id="mPot">—</div></div>
-        <div class="dstat"><div class="l">Valuation · Score</div><div class="v" id="mVal">—</div><div class="s" id="mScore">—</div></div>
+        <div class="dstat"><div class="l">Preço-alvo <button class="info-btn" style="width:15px;height:15px;font-size:9px" onclick="showInfo('i_target')" aria-label="?">i</button></div><div class="v" id="mTarget">—</div><div class="s" id="mPot">—</div></div>
+        <div class="dstat"><div class="l">Valuation · Score <button class="info-btn" style="width:15px;height:15px;font-size:9px" onclick="showInfo('i_val')" aria-label="?">i</button></div><div class="v" id="mVal">—</div><div class="s" id="mScore">—</div></div>
       </div>
       <div class="ind-grid" id="mInd"></div>
       <div style="margin-bottom:22px"><div class="chart-box sm"><canvas id="mDivChart"></canvas></div></div>
@@ -727,6 +735,22 @@ const STOCKS = [
   {t:'EGIE3', n:'Engie Brasil', s:'Energia', px:33.10, ch:0.28, dy:5.3, pl:15.0, pvp:2.7, roe:19.1, roic:14.0, ml:21.3, dle:4.3, payout:55, target:37.00, risk:'Baixo', beta:0.58, hist:[7.8,8.1,8.4,8.6,6.5,5.3]}
 ];
 
+/* ================================================================
+   INSIGHTS — resumos pesquisados manualmente em fontes públicas.
+   Atualizados sob demanda (peça "atualizar insights" no chat).
+================================================================ */
+const INSIGHTS_DATE='06/06/2026';
+const INSIGHTS={
+  PETR4:'Lucro de R$ 32,7 bi no 1T26 e R$ 9 bi em proventos aprovados (data-com 01/06, pagamento em ago/set como JCP). BTG mantém compra com FCF yield ~12%, mas há riscos de ingerência estatal e dependência do petróleo.',
+  VALE3:'Lucro de US$ 1,89 bi no 1T26 (+36%), com produção recorde de minério, cobre e níquel. Vista como uma das mais descontadas do setor; preço-alvo de R$ 104 citado, DY projetado ~6,6%.',
+  ITSA4:'Lucro recorrente de R$ 4,5 bi no 1T26 (+17%), ROE de 20,1% e novo programa de recompra. Perfil conservador e previsível, mas mais de 90% do resultado ainda vem do Itaú.',
+  ITUB4:'Itaú reportou lucro recorrente de R$ 12,28 bi no 1T26 com ROE de 24,8% — um dos bancos mais rentáveis da Bolsa. Tese sólida de qualidade, com remuneração consistente ao acionista.',
+  BBAS3:'1T26 pressionado por provisões elevadas no agronegócio; lucro e dividendos menores que o histórico. Projeção de recuperação para 2026, mas o mercado acompanha com cautela a qualidade do lucro.',
+  BBSE3:'Lucro de R$ 2,2 bi no 1T26 (+11%), acima do esperado, puxado pelo resultado financeiro. Negocia a P/L baixo (~7x) e segue entre as maiores pagadoras, mas o guidance prevê leve queda operacional em 2026.',
+  TAEE11:'1T26 sólido com receita +9,6% e disponibilidade das linhas em ~99,95%. Uma das maiores pagadoras (DY pode chegar a ~9%), mas a alavancagem subiu e há concessões vencendo a partir de 2030.',
+  EGIE3:'Tida como uma das empresas de maior qualidade do setor elétrico, com geração diversificada (hidro, eólica, solar). Costuma negociar com prêmio sobre os pares; alavancagem perto de 3,2x pede atenção.'
+};
+
 /* ===== SCORE (qualidade do papel, 0–100) ===== */
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function calcScore(s){
@@ -798,6 +822,23 @@ function renderKpis(){
 
 /* ===== RENDER: RANKING ===== */
 const RANK_COLS=['Ação','Empresa','Preço','DY%','P/L','P/VP','ROE%','Pot.%','Score','Valuation'];
+function renderInsights(){
+  const box=document.getElementById('insightsBox'); if(!box)return;
+  const dt=document.getElementById('insightsDate'); if(dt) dt.textContent='atualizado em '+INSIGHTS_DATE;
+  box.innerHTML=STOCKS.map(s=>{
+    const txt=INSIGHTS[s.t]||'Sem insight registrado. Peça uma atualização no chat.';
+    return `<div style="padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer" onclick="openModal('${s.t}')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <span style="font-family:var(--font-mono);font-weight:600;color:var(--text-0);font-size:14px">${s.t}</span>
+        <span style="color:var(--text-3);font-size:11px">${s.n}</span>
+        <span style="margin-left:auto">${valTag(s.val.level)}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.55;color:var(--text-1)">${txt}</div>
+    </div>`;
+  }).join('')+`<div style="margin-top:14px;font-size:11px;color:var(--text-3);line-height:1.6">
+    ⚠ Resumos informativos com base em fontes públicas (InfoMoney, Seu Dinheiro, Investidor10, Status Invest e análises de mercado), captados em ${INSIGHTS_DATE}. Não são recomendação de compra ou venda. Para atualizar, peça no chat.</div>`;
+}
+
 function renderRanking(){
   document.getElementById('rankHead').innerHTML=RANK_COLS.map(c=>`<th>${c}</th>`).join('');
   document.getElementById('rankBody').innerHTML=STOCKS.map(s=>`
@@ -864,16 +905,16 @@ function openModal(tk){
   document.getElementById('mScore').textContent='Score '+s.score+'/100';
 
   const ind=[
-    ['Dividend Yield',s.dy.toFixed(1)+'%',s.dy>8?'g':s.dy>5?'n':'b'],
-    ['Payout',s.payout+'%',s.payout<70?'g':s.payout<92?'n':'b'],
-    ['P/L',s.pl.toFixed(1)+'×',s.pl<8?'g':s.pl<15?'n':'b'],
-    ['P/VP',s.pvp.toFixed(2),s.pvp<1.5?'g':s.pvp<3?'n':'b'],
-    ['ROE',s.roe.toFixed(1)+'%',s.roe>15?'g':s.roe>10?'n':'b'],
-    ['ROIC',s.roic.toFixed(1)+'%',s.roic>12?'g':s.roic>8?'n':'b'],
-    ['Margem Líq.',s.ml.toFixed(1)+'%',s.ml>20?'g':s.ml>10?'n':'b'],
-    ['Dív/EBITDA',s.dle.toFixed(1)+'×',s.dle<1?'g':s.dle<2.5?'n':'b']
+    ['Dividend Yield',s.dy.toFixed(1)+'%',s.dy>8?'g':s.dy>5?'n':'b','i_dy'],
+    ['Payout',s.payout+'%',s.payout<70?'g':s.payout<92?'n':'b','i_payout'],
+    ['P/L',s.pl.toFixed(1)+'×',s.pl<8?'g':s.pl<15?'n':'b','i_pl'],
+    ['P/VP',s.pvp.toFixed(2),s.pvp<1.5?'g':s.pvp<3?'n':'b','i_pvp'],
+    ['ROE',s.roe.toFixed(1)+'%',s.roe>15?'g':s.roe>10?'n':'b','i_roe'],
+    ['ROIC',s.roic.toFixed(1)+'%',s.roic>12?'g':s.roic>8?'n':'b','i_roic'],
+    ['Margem Líq.',s.ml.toFixed(1)+'%',s.ml>20?'g':s.ml>10?'n':'b','i_ml'],
+    ['Dív/EBITDA',s.dle.toFixed(1)+'×',s.dle<1?'g':s.dle<2.5?'n':'b','i_dle']
   ];
-  document.getElementById('mInd').innerHTML=ind.map(([l,val,st])=>`<div class="ind"><div class="il"><span>${l}</span><span class="dot-${st}">●</span></div><div class="iv">${val}</div></div>`).join('');
+  document.getElementById('mInd').innerHTML=ind.map(([l,val,st,key])=>`<div class="ind"><div class="il"><span>${l} <button class="info-btn" style="width:15px;height:15px;font-size:9px" onclick="event.stopPropagation();showInfo('${key}')" aria-label="O que é?">i</button></span><span class="dot-${st}">●</span></div><div class="iv">${val}</div></div>`).join('');
 
   if(mDivChart)mDivChart.destroy();
   const yrs=['2021','2022','2023','2024','2025','2026e'];
@@ -921,7 +962,29 @@ const INFO_TEXT={
   current:{t:'Valor atual',b:'Quanto a sua carteira <strong>vale hoje</strong>, multiplicando a quantidade de cada ação pelo preço atual delas.<br><br>Comparado ao total aportado, mostra se você está com lucro (verde) ou prejuízo (vermelho) no papel.',
      ex:'Exemplo: aportou R$ 1.000 e hoje vale R$ 1.080 → +R$ 80 (+8%). É lucro "no papel" até você vender.'},
   received:{t:'Dividendos recebidos',b:'A <strong>soma dos proventos que você realmente recebeu</strong> e registrou — diferente da "renda projetada", que é só uma estimativa do futuro.<br><br>É o dinheiro de dividendos que de fato caiu na sua conta ao longo do tempo.',
-     ex:'Use o botão "Registrar dividendo recebido" cada vez que cair um provento. Assim você acompanha sua renda passiva real crescendo.'}
+     ex:'Use o botão "Registrar dividendo recebido" cada vez que cair um provento. Assim você acompanha sua renda passiva real crescendo.'},
+
+  /* indicadores dentro do detalhe de cada ação */
+  i_dy:{t:'Dividend Yield (DY)',b:'O "rendimento de dividendos" da ação: quanto ela pagou em proventos nos últimos 12 meses em relação ao preço atual.<br><br>Quanto maior, mais ela rende em dividendos hoje. <strong>A bolinha</strong> ao lado fica verde quando é alto (acima de ~8%), amarela quando médio, vermelha quando baixo.',
+     ex:'DY de 9% = R$ 9 de dividendos por ano para cada R$ 100 investidos.'},
+  i_payout:{t:'Payout',b:'A <strong>fatia do lucro</strong> que a empresa distribui aos acionistas (o resto ela reinveste no próprio negócio).<br><br>Payout muito alto (perto de 100%) pode ser insustentável — sobra pouco para a empresa crescer. Muito baixo significa que ela está segurando o lucro.',
+     ex:'Payout de 50% = a empresa paga metade do lucro em dividendos e guarda a outra metade.'},
+  i_pl:{t:'P/L (Preço / Lucro)',b:'Quantos anos de lucro da empresa você "paga" ao comprar a ação no preço atual. É a medida de valuation mais usada.<br><br>P/L baixo costuma indicar ação <strong>mais barata</strong>; alto, mais cara — mas varia por setor (banco e tecnologia têm faixas diferentes).',
+     ex:'P/L de 8 significa que, no ritmo de lucro atual, levaria 8 anos para "recuperar" o valor pago. Abaixo de 8 tende a ser barato.'},
+  i_pvp:{t:'P/VP (Preço / Valor Patrimonial)',b:'Compara o preço da ação com o "valor de livro" da empresa (o patrimônio dela dividido pelas ações).<br><br>P/VP abaixo de 1 significa que a ação custa <strong>menos que o patrimônio</strong> — pode indicar desconto. Acima disso, você paga um prêmio sobre o patrimônio.',
+     ex:'P/VP de 0,8 = você paga R$ 0,80 por cada R$ 1,00 de patrimônio. Comum em bancos descontados.'},
+  i_roe:{t:'ROE (Retorno sobre Patrimônio)',b:'Mostra o quanto a empresa <strong>lucra em relação ao próprio patrimônio</strong> — ou seja, quão eficiente ela é em gerar lucro com o dinheiro dos sócios.<br><br>Quanto maior, melhor. Acima de 15% costuma ser considerado bom.',
+     ex:'ROE de 20% = a empresa gera R$ 20 de lucro por ano para cada R$ 100 de patrimônio.'},
+  i_roic:{t:'ROIC (Retorno sobre Capital Investido)',b:'Parecido com o ROE, mas considera <strong>todo o capital</strong> que a empresa usa (incluindo dívidas), não só o patrimônio dos sócios.<br><br>Mede quão bem a empresa transforma o dinheiro investido em lucro. Acima de 12% é um bom sinal.',
+     ex:'É um dos melhores indicadores de "qualidade" de um negócio a longo prazo.'},
+  i_ml:{t:'Margem Líquida',b:'De cada R$ 100 que a empresa <strong>vende</strong>, quanto sobra de lucro de verdade depois de pagar todos os custos, despesas e impostos.<br><br>Margem alta indica um negócio mais lucrativo e eficiente.',
+     ex:'Margem de 20% = de cada R$ 100 vendidos, R$ 20 viram lucro.'},
+  i_dle:{t:'Dívida / EBITDA',b:'Mede o <strong>endividamento</strong> da empresa: quantos anos de geração de caixa (EBITDA) seriam necessários para pagar toda a dívida.<br><br>Quanto menor, mais saudável. Abaixo de 1 é ótimo; acima de ~2,5 começa a pesar. Em bancos esse número não se aplica do mesmo jeito.',
+     ex:'Dív/EBITDA de 2 = a empresa levaria 2 anos de caixa para quitar as dívidas.'},
+  i_target:{t:'Preço-alvo',b:'O preço que analistas de mercado <strong>estimam</strong> que a ação poderia atingir num horizonte de tempo (geralmente 12 meses).<br><br>Comparado ao preço atual, mostra o "potencial" de valorização na visão deles. É uma projeção — não uma garantia.',
+     ex:'Se a ação custa R$ 40 e o alvo é R$ 48, o potencial é +20%.'},
+  i_val:{t:'Valuation e Score',b:'<strong>Valuation</strong> é o termômetro caro/barato: Descontada, Preço justo ou Esticada — combinando os múltiplos da ação com o histórico dela e o setor.<br><br><strong>Score</strong> é uma nota de 0 a 100 que resume a qualidade geral (dividendos, lucratividade, dívida, potencial).<br><br>Os dois são cálculos automáticos do painel — ajudam a comparar, mas <strong>não são recomendação</strong> de compra.',
+     ex:'Uma ação pode estar "Descontada" e mesmo assim ter riscos. Use como ponto de partida, não como decisão final.'}
 };
 
 function showInfo(key){
@@ -1069,7 +1132,7 @@ const Cloud={
   key:'', enabled:false, _t:null, busy:false,
   async loadKey(){ this.key=(await Store.get('div_sync_key'))||''; this.enabled=!!this.key; return this.key; },
   async setKey(k){ this.key=(k||'').trim(); this.enabled=!!this.key; await Store.set('div_sync_key',this.key); },
-  payload(){ return JSON.stringify({positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots}); },
+  payload(){ return JSON.stringify({positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots,metaDate:DATA_DATE,metaSrc:DATA_SRC}); },
   // grava na nuvem (com leve atraso para agrupar várias mudanças)
   schedulePush(){ if(!this.enabled)return; clearTimeout(this._t); this._t=setTimeout(()=>this.push(),1200); },
   async push(){
@@ -1094,6 +1157,7 @@ const Cloud={
           Portfolio.aportes=d.data.aportes||[];
           Portfolio.dividends=d.data.dividends||[];
           Portfolio.snapshots=d.data.snapshots||[];
+          if(d.data.metaDate){ DATA_DATE=d.data.metaDate; if(d.data.metaSrc)DATA_SRC=d.data.metaSrc; refreshSourceUI(); }
           await Store.set('div_portfolio_v1',{positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots});
           refreshAllocUI(); renderCarteira();
           setCloudStatus('ok','sincronizado');
@@ -1444,8 +1508,11 @@ function resetPortfolio(){
    Yahoo como 2ª tentativa). Se o navegador bloquear (file://),
    abre a tela de inserção manual.
 ================================================================ */
-let DATA_DATE='03/06/2026';
-let DATA_SRC='captura manual · Status Invest / Investidor10';
+let DATA_DATE='03/06/2026';let DATA_SRC='captura manual · Status Invest / Investidor10';
+function nowStamp(){
+  const d=new Date();
+  return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
 
 async function loadMeta(){
   const m=await Store.get('div_meta_v1');
@@ -1460,12 +1527,13 @@ async function loadMeta(){
 async function saveMeta(){
   const prices={}; STOCKS.forEach(s=>prices[s.t]={px:s.px,pl:s.pl,pvp:s.pvp});
   await Store.set('div_meta_v1',{prices,date:DATA_DATE,src:DATA_SRC});
+  if(typeof Cloud!=='undefined') Cloud.schedulePush();
 }
 
 function recomputeAll(rerender=true){
   STOCKS.forEach(s=>{ s.score=calcScore(s); s.potential=(s.target/s.px-1)*100; s.val=valuation(s); });
   STOCKS.sort((a,b)=>{const o={cheap:0,fair:1,rich:2};return o[a.val.level]-o[b.val.level]||b.score-a.score;});
-  if(rerender){ renderKpis(); renderRanking(); renderSectors(); renderScatter(); renderCarteira(); refreshAllocUI(); }
+  if(rerender){ renderKpis(); renderRanking(); renderSectors(); renderScatter(); renderInsights(); renderCarteira(); refreshAllocUI(); }
 }
 
 function refreshSourceUI(){
@@ -1517,7 +1585,7 @@ async function requestUpdate(){
   const n=Object.keys(got).length;
   if(n>0){
     STOCKS.forEach(s=>{ const g=got[s.t]; if(g){ s.px=g.px; if(g.pl!=null)s.pl=g.pl; if(g.pvp!=null)s.pvp=g.pvp; } });
-    DATA_DATE=new Date().toLocaleDateString('pt-BR');
+    DATA_DATE=nowStamp();
     DATA_SRC='cotações ao vivo · '+via;
     recomputeAll(true); saveMeta(); refreshSourceUI();
     btn.classList.add('ok'); setTimeout(()=>btn.classList.remove('ok'),2500);
@@ -1560,10 +1628,10 @@ function applyManualPrices(){
     if(v>0){ const s=STOCKS.find(x=>x.t===inp.dataset.tk); if(s){ s.px=v; changed++; } }
   });
   if(changed===0){ toast('info','Nada alterado','Nenhum preço foi informado.'); closeUpdate(); return; }
-  DATA_DATE=new Date().toLocaleDateString('pt-BR');
+  DATA_DATE=nowStamp();
   DATA_SRC='preços inseridos manualmente';
   recomputeAll(true); saveMeta(); refreshSourceUI(); closeUpdate();
-  toast('success','Preços atualizados',`${changed} ações · base ${DATA_DATE}`);
+  toast('success','Preços atualizados',`${changed} ações · ${DATA_DATE}`);
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeUpdate(); } });
 
@@ -1582,6 +1650,7 @@ renderKpis();
 renderRanking();
 renderSectors();
 renderScatter();
+renderInsights();
 (async function initApp(){
   await loadPortfolio();
   await loadMeta();
@@ -1596,4 +1665,3 @@ renderScatter();
 </script>
 </body>
 </html>
- 
