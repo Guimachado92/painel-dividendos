@@ -540,6 +540,27 @@ body{
     </div>
 
     <div class="panel">
+      <div class="panel-head"><h3>☁ Sincronizar entre aparelhos</h3><span class="sub" id="cloudStatus"><span style="color:var(--text-3)">●</span> não conectado</span></div>
+      <div class="panel-body">
+        <p style="font-size:12.5px;color:var(--text-2);line-height:1.6;margin-bottom:14px">
+          Crie uma <strong>chave de acesso</strong> (uma senha sua) e digite a <strong>mesma chave</strong> no celular e no notebook. Assim sua carteira fica igual nos dois, sincronizada automaticamente.
+          <br><span style="color:var(--text-3);font-size:11px">Guarde bem essa chave: quem tiver ela acessa sua carteira. E se você esquecê-la, não há como recuperar os dados ligados a ela.</span>
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <input type="password" id="cloudKey" placeholder="sua chave de acesso" autocomplete="off"
+            style="flex:1;min-width:200px;background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);padding:13px 14px;border-radius:9px;font-family:var(--font-mono);font-size:15px">
+          <button class="btn btn-primary" style="flex:0 1 auto" onclick="connectCloud()">Conectar</button>
+        </div>
+        <div id="cloudConnected" style="display:none;margin-top:12px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" style="background:var(--bg-3);color:var(--info);flex:0 1 auto" onclick="Cloud.pull(true)">↓ Baixar da nuvem agora</button>
+            <button class="btn" style="background:var(--bg-3);color:var(--text-2);flex:0 1 auto" onclick="disconnectCloud()">Desconectar este aparelho</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
       <div class="panel-head"><h3>Evolução do patrimônio</h3><span class="sub">aportado × valor atual</span></div>
       <div class="panel-body"><div class="chart-box sm"><canvas id="evolChart"></canvas></div></div>
     </div>
@@ -1037,7 +1058,79 @@ async function loadPortfolio(){
   if(p){ Portfolio.positions=p.positions||{}; Portfolio.aportes=p.aportes||[]; Portfolio.dividends=p.dividends||[]; Portfolio.snapshots=p.snapshots||[]; }
   refreshAllocUI(); renderCarteira();
 }
-async function savePortfolio(){ await Store.set('div_portfolio_v1',{positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots}); }
+async function savePortfolio(){ await Store.set('div_portfolio_v1',{positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots}); Cloud.schedulePush(); }
+
+/* ================================================================
+   CLOUD — sincronização opcional via Cloudflare KV (/api/sync)
+   Protegido por uma "chave de acesso" que só o usuário conhece.
+   A chave fica salva localmente neste aparelho.
+================================================================ */
+const Cloud={
+  key:'', enabled:false, _t:null, busy:false,
+  async loadKey(){ this.key=(await Store.get('div_sync_key'))||''; this.enabled=!!this.key; return this.key; },
+  async setKey(k){ this.key=(k||'').trim(); this.enabled=!!this.key; await Store.set('div_sync_key',this.key); },
+  payload(){ return JSON.stringify({positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots}); },
+  // grava na nuvem (com leve atraso para agrupar várias mudanças)
+  schedulePush(){ if(!this.enabled)return; clearTimeout(this._t); this._t=setTimeout(()=>this.push(),1200); },
+  async push(){
+    if(!this.enabled)return;
+    try{
+      const r=await fetch('/api/sync?key='+encodeURIComponent(this.key),{method:'POST',headers:{'Content-Type':'application/json'},body:this.payload()});
+      const d=await r.json().catch(()=>({}));
+      if(r.ok && d.ok){ setCloudStatus('ok','salvo na nuvem'); }
+      else { setCloudStatus('warn', d.error==='chave invalida'?'chave incorreta':'falha ao salvar'); }
+    }catch(e){ setCloudStatus('warn','sem conexão'); }
+  },
+  async pull(showToast){
+    if(!this.enabled)return false;
+    setCloudStatus('sync','baixando...');
+    try{
+      const r=await fetch('/api/sync?key='+encodeURIComponent(this.key));
+      const d=await r.json().catch(()=>({}));
+      if(r.status===401){ setCloudStatus('warn','chave incorreta'); if(showToast)toast('error','Chave incorreta','Verifique a chave de sincronização.'); return false; }
+      if(r.ok && d.ok){
+        if(d.data){
+          Portfolio.positions=d.data.positions||{};
+          Portfolio.aportes=d.data.aportes||[];
+          Portfolio.dividends=d.data.dividends||[];
+          Portfolio.snapshots=d.data.snapshots||[];
+          await Store.set('div_portfolio_v1',{positions:Portfolio.positions,aportes:Portfolio.aportes,dividends:Portfolio.dividends,snapshots:Portfolio.snapshots});
+          refreshAllocUI(); renderCarteira();
+          setCloudStatus('ok','sincronizado');
+          if(showToast)toast('success','Carteira baixada da nuvem','Dados sincronizados neste aparelho.');
+        }else{
+          setCloudStatus('ok','nuvem vazia — será criada no 1º salvamento');
+          if(showToast)toast('info','Nuvem vazia','Ainda não há dados salvos nesta chave. Eles serão enviados quando você registrar algo.');
+        }
+        return true;
+      }
+      setCloudStatus('warn', d.error||'falha'); return false;
+    }catch(e){ setCloudStatus('warn','sem conexão'); return false; }
+  }
+};
+
+function setCloudStatus(kind,txt){
+  const el=document.getElementById('cloudStatus'); if(!el)return;
+  const col=kind==='ok'?'var(--up)':kind==='warn'?'var(--warn)':'var(--info)';
+  el.innerHTML=`<span style="color:${col}">●</span> ${txt}`;
+}
+
+async function connectCloud(){
+  const inp=document.getElementById('cloudKey');
+  const k=(inp.value||'').trim();
+  if(k.length<4){ toast('error','Chave muito curta','Use uma chave com pelo menos 4 caracteres (uma "senha" sua).'); return; }
+  await Cloud.setKey(k);
+  document.getElementById('cloudConnected').style.display='block';
+  // ao conectar: baixa o que já existe na nuvem
+  const ok=await Cloud.pull(true);
+  // se a nuvem estava vazia, envia o que tem localmente
+  if(ok) Cloud.push();
+}
+async function disconnectCloud(){
+  await Cloud.setKey('');
+  setCloudStatus('warn','desconectado deste aparelho');
+  toast('info','Sincronização desligada','Seus dados continuam salvos localmente.');
+}
 
 // registra um "retrato" do patrimônio na data de hoje (para o gráfico de evolução)
 function snapshotPortfolio(){
@@ -1489,8 +1582,17 @@ renderKpis();
 renderRanking();
 renderSectors();
 renderScatter();
-loadPortfolio();
-loadMeta();
+(async function initApp(){
+  await loadPortfolio();
+  await loadMeta();
+  await Cloud.loadKey();
+  if(Cloud.enabled){
+    const inp=document.getElementById('cloudKey'); if(inp) inp.value=Cloud.key;
+    const cc=document.getElementById('cloudConnected'); if(cc) cc.style.display='block';
+    setCloudStatus('sync','conectado — sincronizando...');
+    Cloud.pull(false); // traz a versão da nuvem ao abrir
+  }
+})();
 </script>
 </body>
 </html>
