@@ -123,6 +123,13 @@ body{
 .val-fair{background:rgba(255,181,71,.12);color:var(--warn);border:1px solid rgba(255,181,71,.3)}
 .val-rich{background:rgba(255,84,112,.12);color:var(--down);border:1px solid rgba(255,84,112,.3)}
 
+.dp-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-family:var(--font-mono);
+  font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.dp-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.dp-strong{background:rgba(34,195,137,.12);color:var(--up);border:1px solid rgba(34,195,137,.3)}
+.dp-moderate{background:rgba(255,181,71,.12);color:var(--warn);border:1px solid rgba(255,181,71,.3)}
+.dp-weak{background:rgba(255,84,112,.12);color:var(--down);border:1px solid rgba(255,84,112,.3)}
+
 /* ===== TABLE ===== */
 .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tbl{width:100%;border-collapse:collapse;min-width:680px}
@@ -761,7 +768,30 @@ const VLABEL={cheap:'Descontada',fair:'Preço justo',rich:'Esticada'};
 const VCLASS={cheap:'val-cheap',fair:'val-fair',rich:'val-rich'};
 const valTag=l=>`<span class="val-badge ${VCLASS[l]}">${VLABEL[l]}</span>`;
 
-STOCKS.forEach(s=>{s.score=calcScore(s);s.potential=(s.target/s.px-1)*100;s.val=valuation(s);});
+/* ===== PERFIL DE DIVIDENDO (forte / moderado / fraco) =====
+   Combina o DY atual com a consistência do histórico de 6 anos.
+   Histórico estável ou crescente = mais confiável; queda forte = atenção. */
+function divProfile(s){
+  const h=s.hist||[];
+  const first=h[0]??s.dy;
+  const last=h[h.length-1]??s.dy;
+  const avg=h.length?h.reduce((a,b)=>a+b,0)/h.length:s.dy;
+  const dy=s.dy;
+  // queda relevante só conta como "fraco" se o DY ATUAL também estiver baixo
+  const trendDownAndLow = (last < first*0.6) && dy < 6;
+  let level;
+  if(dy<4 || trendDownAndLow) level='weak';        // paga pouco hoje / encolheu e está baixo
+  else if(dy>=7) level='strong';                    // paga bem hoje
+  else if(dy>=5) level='moderate';                  // intermediário
+  else level='moderate';
+  if(level==='strong' && s.payout<35) level='moderate'; // payout muito baixo = menos previsível
+  return level;
+}
+const DPLABEL={strong:'Forte pagadora',moderate:'Pagadora moderada',weak:'Dividendo em baixa'};
+const DPCLASS={strong:'dp-strong',moderate:'dp-moderate',weak:'dp-weak'};
+const dpTag=l=>`<span class="dp-badge ${DPCLASS[l]}">${DPLABEL[l]}</span>`;
+
+STOCKS.forEach(s=>{s.score=calcScore(s);s.potential=(s.target/s.px-1)*100;s.val=valuation(s);s.dp=divProfile(s);});
 STOCKS.sort((a,b)=>{const o={cheap:0,fair:1,rich:2};return o[a.val.level]-o[b.val.level]||b.score-a.score;});
 
 /* setores derivados da lista */
@@ -803,7 +833,7 @@ function renderKpis(){
 }
 
 /* ===== RENDER: RANKING ===== */
-const RANK_COLS=['Ação','Empresa','Preço','DY%','P/L','P/VP','ROE%','Pot.%','Score','Valuation'];
+const RANK_COLS=['Ação','Empresa','Preço','DY%','P/L','P/VP','ROE%','Pot.%','Score','Valuation','Dividendo'];
 function renderRanking(){
   document.getElementById('rankHead').innerHTML=RANK_COLS.map(c=>`<th>${c}</th>`).join('');
   document.getElementById('rankBody').innerHTML=STOCKS.map(s=>`
@@ -818,6 +848,7 @@ function renderRanking(){
       <td data-label="Potencial" class="${s.potential>=0?'up':'down'}">${s.potential>=0?'+':''}${s.potential.toFixed(1)}%</td>
       <td data-label="Score"><span class="scorebar"><span>${s.score.toFixed(0)}</span><span class="bar"><span class="fill" style="width:${s.score}%"></span></span></span></td>
       <td data-label="Valuation">${valTag(s.val.level)}</td>
+      <td data-label="Dividendo">${dpTag(s.dp)}</td>
     </tr>`).join('');
 }
 
@@ -859,7 +890,7 @@ let mDivChart=null;
 function openModal(tk){
   const s=STOCKS.find(x=>x.t===tk);if(!s)return;
   document.getElementById('mTitle').innerHTML=`${s.n} <span class="tk">${s.t}</span>`;
-  document.getElementById('mSect').textContent='▸ '+s.s.toUpperCase();
+  document.getElementById('mSect').innerHTML='▸ '+s.s.toUpperCase()+' &nbsp; '+dpTag(s.dp);
   document.getElementById('mPrice').textContent=fmtBRL(s.px);
   document.getElementById('mChange').innerHTML=`<span class="${s.ch>=0?'up':'down'}">${s.ch>=0?'+':''}${s.ch.toFixed(2)}% hoje</span>`;
   document.getElementById('mTarget').textContent=fmtBRL(s.target);
@@ -1496,7 +1527,7 @@ async function saveMeta(){
 }
 
 function recomputeAll(rerender=true){
-  STOCKS.forEach(s=>{ s.score=calcScore(s); s.potential=(s.target/s.px-1)*100; s.val=valuation(s); });
+  STOCKS.forEach(s=>{ s.score=calcScore(s); s.potential=(s.target/s.px-1)*100; s.val=valuation(s); s.dp=divProfile(s); });
   STOCKS.sort((a,b)=>{const o={cheap:0,fair:1,rich:2};return o[a.val.level]-o[b.val.level]||b.score-a.score;});
   if(rerender){ renderKpis(); renderRanking(); renderSectors(); renderScatter(); renderCarteira(); refreshAllocUI(); }
 }
