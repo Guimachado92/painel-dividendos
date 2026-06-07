@@ -1205,6 +1205,11 @@ function renderGoal(){
 }
 
 
+/* ================================================================
+   ALOCADOR — distribui o aporte (mensal ou único)
+================================================================ */
+const Alloc={type:'mensal',risk:'moderado',n:6};
+
 document.querySelectorAll('#aporteType button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#aporteType button').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');Alloc.type=b.dataset.type;
