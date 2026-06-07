@@ -20,6 +20,13 @@
   --font-mono:'JetBrains Mono',monospace;
   --r:12px;
 }
+body.light{
+  --bg-0:#f3f5f8; --bg-1:#ffffff; --bg-2:#f0f3f7; --bg-3:#e6ebf1;
+  --line:#dde3ea; --line-2:#c8d2dd;
+  --text-0:#121821; --text-1:#2f3a48; --text-2:#5a6677; --text-3:#8995a6;
+  --accent:#b07d3f; --accent-2:#c89656;
+  --up:#0a9d63; --down:#d63354; --warn:#c77f10; --info:#2b6fd6;
+}
 *{margin:0;padding:0;box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
@@ -53,6 +60,10 @@ body{
 .src-badge.ok{border-color:rgba(34,195,137,.4);background:rgba(34,195,137,.08);color:var(--up)}
 .src-badge.warn{border-color:rgba(255,181,71,.4);background:rgba(255,181,71,.08);color:var(--warn)}
 @keyframes spin{to{transform:rotate(360deg)}}
+.theme-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex-shrink:0;
+  border-radius:50%;border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-1);
+  font-size:16px;cursor:pointer;transition:all .2s;margin-left:8px}
+.theme-btn:hover{background:var(--bg-3);color:var(--accent)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 .tabs{display:flex;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:3px;margin-left:8px}
@@ -376,6 +387,9 @@ body{
       <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       <span id="srcTxt">Atualizar · base 03/06/2026</span>
     </button>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Alternar tema claro/escuro" aria-label="Alternar tema">
+      <span id="themeIcon">☾</span>
+    </button>
   </div>
 </header>
 
@@ -568,6 +582,32 @@ body{
     </div>
 
     <div class="panel">
+      <div class="panel-head"><h3>🎯 Meta de renda passiva</h3><span class="sub" id="goalStatus">—</span></div>
+      <div class="panel-body">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+          <div style="flex:1;min-width:160px">
+            <div class="field-lbl">Quanto você quer receber por mês (R$)</div>
+            <div class="money-in"><span class="cur">R$</span><input type="text" inputmode="decimal" id="goalInput" placeholder="1.000,00"></div>
+          </div>
+          <button class="btn btn-primary" style="flex:0 1 auto" onclick="saveGoal()">Definir meta</button>
+        </div>
+        <div id="goalBox" style="font-size:13px;color:var(--text-2)">Defina uma meta para ver seu progresso.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Renda mensal estimada</h3><span class="sub">distribuição ao longo do ano</span></div>
+      <div class="panel-body"><div class="chart-box sm"><canvas id="monthChart"></canvas></div>
+        <div id="monthNote" style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.5"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>📅 Calendário de dividendos</h3><span class="sub">meses típicos de pagamento</span></div>
+      <div class="panel-body" id="calBox"></div>
+    </div>
+
+    <div class="panel">
       <div class="panel-head"><h3>Evolução do patrimônio</h3><span class="sub">aportado × valor atual</span></div>
       <div class="panel-body"><div class="chart-box sm"><canvas id="evolChart"></canvas></div></div>
     </div>
@@ -724,20 +764,20 @@ body{
            target preço-alvo · risk · beta · hist (DY 6 anos)
 ================================================================ */
 const STOCKS = [
-  {t:'PETR4', n:'Petrobras', s:'Petróleo & Gás', px:42.37, ch:-0.46, dy:9.4, pl:7.0, pvp:1.2, roe:12.2, roic:11.0, ml:18.4, dle:1.2, payout:45, target:52.67, risk:'Alto', beta:1.32, hist:[18.4,16.2,14.8,13.2,11.0,9.4]},
-  {t:'VALE3', n:'Vale', s:'Mineração', px:85.00, ch:0.42, dy:6.7, pl:6.5, pvp:1.5, roe:15.6, roic:13.0, ml:31.2, dle:0.4, payout:54, target:90.00, risk:'Alto', beta:1.18, hist:[12.4,11.8,10.6,9.4,8.0,6.7]},
-  {t:'ITSA4', n:'Itaúsa', s:'Financeiro', px:12.90, ch:0.31, dy:9.7, pl:7.2, pvp:1.3, roe:17.0, roic:13.4, ml:32.1, dle:0.8, payout:48, target:14.50, risk:'Baixo', beta:0.78, hist:[8.1,8.4,8.9,9.1,9.4,9.7]},
-  {t:'ITUB4', n:'Itaú Unibanco', s:'Bancos', px:38.00, ch:0.21, dy:8.0, pl:9.0, pvp:1.8, roe:20.0, roic:15.0, ml:28.0, dle:0.0, payout:60, target:45.00, risk:'Baixo', beta:0.90, hist:[6.4,6.8,7.2,7.6,7.8,8.0]},
-  {t:'BBAS3', n:'Banco do Brasil', s:'Bancos', px:19.89, ch:-0.55, dy:5.0, pl:4.5, pvp:0.75, roe:12.0, roic:9.8, ml:24.2, dle:0.0, payout:30, target:22.50, risk:'Médio', beta:0.92, hist:[9.8,10.2,10.8,11.4,8.4,5.0]},
-  {t:'BBSE3', n:'BB Seguridade', s:'Seguros', px:35.03, ch:0.18, dy:12.9, pl:9.0, pvp:6.0, roe:50.0, roic:42.0, ml:38.4, dle:0.0, payout:88, target:36.50, risk:'Baixo', beta:0.71, hist:[8.4,8.8,9.2,11.0,12.0,12.9]},
-  {t:'TAEE11', n:'Taesa', s:'Energia', px:39.25, ch:-0.42, dy:8.4, pl:9.2, pvp:2.4, roe:22.0, roic:15.2, ml:42.8, dle:2.1, payout:90, target:42.00, risk:'Médio', beta:0.62, hist:[10.4,10.6,11.1,10.9,9.2,8.4]},
-  {t:'EGIE3', n:'Engie Brasil', s:'Energia', px:33.10, ch:0.28, dy:5.3, pl:15.0, pvp:2.7, roe:19.1, roic:14.0, ml:21.3, dle:4.3, payout:55, target:37.00, risk:'Baixo', beta:0.58, hist:[7.8,8.1,8.4,8.6,6.5,5.3]},
-  {t:'BBDC4', n:'Bradesco', s:'Bancos', px:17.77, ch:-0.30, dy:8.7, pl:8.1, pvp:1.05, roe:15.5, roic:11.0, ml:22.0, dle:0.0, payout:51, target:22.00, risk:'Médio', beta:1.05, hist:[5.8,6.2,6.8,7.4,8.0,8.7]},
-  {t:'CMIG4', n:'Cemig', s:'Energia', px:10.83, ch:0.12, dy:11.7, pl:5.2, pvp:1.3, roe:24.0, roic:14.5, ml:18.0, dle:1.6, payout:52, target:12.50, risk:'Médio', beta:0.85, hist:[8.2,9.0,9.8,10.5,11.0,11.7]},
-  {t:'CPLE3', n:'Copel', s:'Energia', px:14.41, ch:0.20, dy:3.5, pl:9.0, pvp:1.1, roe:11.5, roic:9.0, ml:16.0, dle:1.8, payout:35, target:18.00, risk:'Médio', beta:0.80, hist:[2.8,3.4,5.2,6.8,4.0,3.5]},
-  {t:'SAPR11', n:'Sanepar', s:'Saneamento', px:36.27, ch:-0.25, dy:5.3, pl:7.0, pvp:1.1, roe:16.0, roic:11.5, ml:24.0, dle:1.0, payout:35, target:42.00, risk:'Médio', beta:0.70, hist:[4.0,4.4,5.0,8.2,6.0,5.3]},
-  {t:'CXSE3', n:'Caixa Seguridade', s:'Seguros', px:17.67, ch:0.22, dy:8.0, pl:12.0, pvp:5.0, roe:42.0, roic:38.0, ml:55.0, dle:0.0, payout:90, target:20.00, risk:'Baixo', beta:0.65, hist:[4.5,5.2,6.4,7.2,7.6,8.0]},
-  {t:'VIVT3', n:'Vivo (Telefônica)', s:'Telecom', px:29.50, ch:0.10, dy:7.0, pl:15.0, pvp:1.2, roe:9.0, roic:7.5, ml:13.0, dle:0.6, payout:95, target:33.00, risk:'Baixo', beta:0.55, hist:[4.8,5.4,6.0,6.6,6.8,7.0]}
+  {t:'PETR4', n:'Petrobras', s:'Petróleo & Gás', px:42.37, ch:-0.46, dy:9.4, pl:7.0, pvp:1.2, roe:12.2, roic:11.0, ml:18.4, dle:1.2, payout:45, target:52.67, risk:'Alto', beta:1.32, hist:[18.4,16.2,14.8,13.2,11.0,9.4], pm:[2,5,8,11]},
+  {t:'VALE3', n:'Vale', s:'Mineração', px:85.00, ch:0.42, dy:6.7, pl:6.5, pvp:1.5, roe:15.6, roic:13.0, ml:31.2, dle:0.4, payout:54, target:90.00, risk:'Alto', beta:1.18, hist:[12.4,11.8,10.6,9.4,8.0,6.7], pm:[3,9]},
+  {t:'ITSA4', n:'Itaúsa', s:'Financeiro', px:12.90, ch:0.31, dy:9.7, pl:7.2, pvp:1.3, roe:17.0, roic:13.4, ml:32.1, dle:0.8, payout:48, target:14.50, risk:'Baixo', beta:0.78, hist:[8.1,8.4,8.9,9.1,9.4,9.7], pm:[1,3,8,11]},
+  {t:'ITUB4', n:'Itaú Unibanco', s:'Bancos', px:38.00, ch:0.21, dy:8.0, pl:9.0, pvp:1.8, roe:20.0, roic:15.0, ml:28.0, dle:0.0, payout:60, target:45.00, risk:'Baixo', beta:0.90, hist:[6.4,6.8,7.2,7.6,7.8,8.0], pm:[1,3,8,11]},
+  {t:'BBAS3', n:'Banco do Brasil', s:'Bancos', px:19.89, ch:-0.55, dy:5.0, pl:4.5, pvp:0.75, roe:12.0, roic:9.8, ml:24.2, dle:0.0, payout:30, target:22.50, risk:'Médio', beta:0.92, hist:[9.8,10.2,10.8,11.4,8.4,5.0], pm:[3,6,9,12]},
+  {t:'BBSE3', n:'BB Seguridade', s:'Seguros', px:35.03, ch:0.18, dy:12.9, pl:9.0, pvp:6.0, roe:50.0, roic:42.0, ml:38.4, dle:0.0, payout:88, target:36.50, risk:'Baixo', beta:0.71, hist:[8.4,8.8,9.2,11.0,12.0,12.9], pm:[3,9]},
+  {t:'TAEE11', n:'Taesa', s:'Energia', px:39.25, ch:-0.42, dy:8.4, pl:9.2, pvp:2.4, roe:22.0, roic:15.2, ml:42.8, dle:2.1, payout:90, target:42.00, risk:'Médio', beta:0.62, hist:[10.4,10.6,11.1,10.9,9.2,8.4], pm:[3,6,9,12]},
+  {t:'EGIE3', n:'Engie Brasil', s:'Energia', px:33.10, ch:0.28, dy:5.3, pl:15.0, pvp:2.7, roe:19.1, roic:14.0, ml:21.3, dle:4.3, payout:55, target:37.00, risk:'Baixo', beta:0.58, hist:[7.8,8.1,8.4,8.6,6.5,5.3], pm:[6,12]},
+  {t:'BBDC4', n:'Bradesco', s:'Bancos', px:17.77, ch:-0.30, dy:8.7, pl:8.1, pvp:1.05, roe:15.5, roic:11.0, ml:22.0, dle:0.0, payout:51, target:22.00, risk:'Médio', beta:1.05, hist:[5.8,6.2,6.8,7.4,8.0,8.7], pm:[1,7]},
+  {t:'CMIG4', n:'Cemig', s:'Energia', px:10.83, ch:0.12, dy:11.7, pl:5.2, pvp:1.3, roe:24.0, roic:14.5, ml:18.0, dle:1.6, payout:52, target:12.50, risk:'Médio', beta:0.85, hist:[8.2,9.0,9.8,10.5,11.0,11.7], pm:[6,12]},
+  {t:'CPLE3', n:'Copel', s:'Energia', px:14.41, ch:0.20, dy:3.5, pl:9.0, pvp:1.1, roe:11.5, roic:9.0, ml:16.0, dle:1.8, payout:35, target:18.00, risk:'Médio', beta:0.80, hist:[2.8,3.4,5.2,6.8,4.0,3.5], pm:[6]},
+  {t:'SAPR11', n:'Sanepar', s:'Saneamento', px:36.27, ch:-0.25, dy:5.3, pl:7.0, pvp:1.1, roe:16.0, roic:11.5, ml:24.0, dle:1.0, payout:35, target:42.00, risk:'Médio', beta:0.70, hist:[4.0,4.4,5.0,8.2,6.0,5.3], pm:[6]},
+  {t:'CXSE3', n:'Caixa Seguridade', s:'Seguros', px:17.67, ch:0.22, dy:8.0, pl:12.0, pvp:5.0, roe:42.0, roic:38.0, ml:55.0, dle:0.0, payout:90, target:20.00, risk:'Baixo', beta:0.65, hist:[4.5,5.2,6.4,7.2,7.6,8.0], pm:[3,6,9,12]},
+  {t:'VIVT3', n:'Vivo (Telefônica)', s:'Telecom', px:29.50, ch:0.10, dy:7.0, pl:15.0, pvp:1.2, roe:9.0, roic:7.5, ml:13.0, dle:0.6, payout:95, target:33.00, risk:'Baixo', beta:0.55, hist:[4.8,5.4,6.0,6.6,6.8,7.0], pm:[4,12]}
 ];
 
 /* ===== SCORE (qualidade do papel, 0–100) ===== */
@@ -1077,10 +1117,93 @@ function renderEvolChart(){
   });
 }
 
-/* ================================================================
-   ALOCADOR — distribui o aporte (mensal ou único)
-================================================================ */
-const Alloc={type:'mensal',risk:'moderado',n:6};
+/* ===== RENDA MENSAL ESTIMADA (distribui dividendos da carteira pelos meses de pagamento) ===== */
+const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+let monthChart=null;
+function monthlyIncomeArray(){
+  const arr=new Array(12).fill(0);
+  const {rows}=portfolioTotals();
+  rows.forEach(r=>{
+    const anual=r.current*(r.s.dy/100);     // renda anual estimada da posição
+    const meses=(r.s.pm&&r.s.pm.length)?r.s.pm:[1,4,7,10];
+    const porMes=anual/meses.length;
+    meses.forEach(m=>arr[m-1]+=porMes);
+  });
+  return arr;
+}
+function renderMonthChart(){
+  const el=document.getElementById('monthChart'); if(!el)return;
+  const data=monthlyIncomeArray();
+  const total=data.reduce((a,b)=>a+b,0);
+  if(monthChart) monthChart.destroy();
+  monthChart=new Chart(el,{type:'bar',
+    data:{labels:MESES,datasets:[{data,backgroundColor:'rgba(34,195,137,.55)',borderColor:'#22c389',borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtBRL(c.parsed.y)+' estimado'}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid,ticks:{font:{size:9},callback:v=>'R$ '+v.toFixed(0)}}}}
+  });
+  const note=document.getElementById('monthNote');
+  if(note) note.textContent=total>0
+    ? `Estimativa baseada na sua carteira e nos meses típicos de pagamento. Total no ano: ${fmtBRL(total)} (média de ${fmtBRL(total/12)}/mês). Os valores reais variam conforme cada empresa.`
+    : 'Monte sua carteira para ver a distribuição mensal estimada dos dividendos.';
+}
+
+/* ===== CALENDÁRIO DE DIVIDENDOS (meses típicos por ação) ===== */
+function renderCalendar(){
+  const box=document.getElementById('calBox'); if(!box)return;
+  const owned=new Set(Object.keys(Portfolio.positions||{}));
+  // monta: para cada mês, quais ações costumam pagar
+  const byMonth=MESES.map(()=>[]);
+  STOCKS.forEach(s=>{ (s.pm||[]).forEach(m=>byMonth[m-1].push(s.t)); });
+  box.innerHTML=`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">`+
+    MESES.map((mes,i)=>{
+      const tickers=byMonth[i];
+      if(tickers.length===0) return `<div style="padding:10px 12px;background:var(--bg-2);border:1px solid var(--line);border-radius:9px;opacity:.5">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);text-transform:uppercase">${mes}</div>
+        <div style="font-size:11px;color:var(--text-3)">—</div></div>`;
+      return `<div style="padding:10px 12px;background:var(--bg-2);border:1px solid var(--line);border-radius:9px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;margin-bottom:5px">${mes}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${tickers.map(t=>{
+          const mine=owned.has(t);
+          return `<span style="font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:5px;background:${mine?'rgba(34,195,137,.15)':'var(--bg-3)'};color:${mine?'var(--up)':'var(--text-2)'};border:1px solid ${mine?'rgba(34,195,137,.3)':'var(--line)'}">${t}</span>`;
+        }).join('')}</div></div>`;
+    }).join('')+`</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:12px;line-height:1.5">Verde = ações que você tem na carteira. São os meses <strong>típicos</strong> de pagamento (com base no histórico) — as datas exatas mudam a cada ano e a empresa pode alterar. Não considere como garantia.</div>`;
+}
+
+/* ===== META DE RENDA PASSIVA ===== */
+let GOAL=0;
+async function loadGoal(){ GOAL=(await Store.get('div_goal'))||0; const inp=document.getElementById('goalInput'); if(inp&&GOAL) inp.value=GOAL.toLocaleString('pt-BR',{minimumFractionDigits:2}); renderGoal(); }
+async function saveGoal(){
+  GOAL=parseMoney(document.getElementById('goalInput').value);
+  await Store.set('div_goal',GOAL);
+  renderGoal();
+  if(GOAL>0) toast('success','Meta definida',fmtBRL(GOAL)+'/mês');
+}
+function renderGoal(){
+  const box=document.getElementById('goalBox'); const st=document.getElementById('goalStatus'); if(!box)return;
+  if(!GOAL||GOAL<=0){ box.innerHTML='Defina uma meta para ver seu progresso.'; if(st)st.textContent='—'; return; }
+  const {incomeYr,invested,wDy}=portfolioTotals();
+  const mensalAtual=incomeYr/12;
+  const pct=Math.min(100,(mensalAtual/GOAL)*100);
+  // quanto falta investir para atingir a meta (usando o DY médio da carteira, ou 8% como referência)
+  const dyRef=wDy>0?wDy/100:0.08;
+  const rendaAnualAlvo=GOAL*12;
+  const patrimonioAlvo=rendaAnualAlvo/dyRef;
+  const faltaInvestir=Math.max(0,patrimonioAlvo-invested);
+  if(st) st.textContent=pct.toFixed(0)+'% da meta';
+  box.innerHTML=`
+    <div style="margin-bottom:10px;font-size:13px">Você recebe hoje cerca de <strong class="up">${fmtBRL(mensalAtual)}/mês</strong> em dividendos estimados, de uma meta de <strong>${fmtBRL(GOAL)}/mês</strong>.</div>
+    <div style="height:14px;background:var(--bg-3);border-radius:8px;overflow:hidden;margin-bottom:10px">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--up),var(--accent));transition:width .5s"></div>
+    </div>
+    <div style="font-size:12.5px;color:var(--text-2);line-height:1.6">
+      ${pct>=100
+        ? '🎉 Você já atingiu sua meta de renda passiva! Parabéns.'
+        : `Faltam <strong class="up">${fmtBRL(GOAL-mensalAtual)}/mês</strong>. Para chegar lá, estima-se investir mais <strong>${fmtShort(faltaInvestir)}</strong> (considerando um DY de ${(dyRef*100).toFixed(1)}% ao ano). É uma estimativa simplificada, não considera reinvestimento nem crescimento dos dividendos.`}
+    </div>`;
+}
+
 
 document.querySelectorAll('#aporteType button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#aporteType button').forEach(x=>x.classList.remove('active'));
@@ -1426,6 +1549,9 @@ function renderCarteira(){
   }
 
   renderEvolChart();
+  renderMonthChart();
+  renderCalendar();
+  renderGoal();
 
   document.getElementById('aporteCount').textContent=Portfolio.aportes.length+' registros';
   if(Portfolio.aportes.length===0){
@@ -1508,6 +1634,25 @@ let DATA_DATE='03/06/2026';let DATA_SRC='captura manual · Status Invest / Inves
 function nowStamp(){
   const d=new Date();
   return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ===== TEMA CLARO / ESCURO ===== */
+async function applyTheme(light){
+  document.body.classList.toggle('light',light);
+  const ic=document.getElementById('themeIcon'); if(ic) ic.textContent=light?'☀':'☾';
+  await Store.set('div_theme', light?'light':'dark');
+  if(typeof recomputeAll==='function'){} // gráficos usam cores via CSS vars já aplicadas
+}
+async function toggleTheme(){
+  const isLight=document.body.classList.contains('light');
+  await applyTheme(!isLight);
+  // redesenha gráficos para pegar as novas cores
+  if(typeof renderScatter==='function') renderScatter();
+  if(typeof renderEvolChart==='function') renderEvolChart();
+}
+async function loadTheme(){
+  const t=await Store.get('div_theme');
+  applyTheme(t==='light');
 }
 
 async function loadMeta(){
@@ -1647,8 +1792,10 @@ renderRanking();
 renderSectors();
 renderScatter();
 (async function initApp(){
+  await loadTheme();
   await loadPortfolio();
   await loadMeta();
+  await loadGoal();
   await Cloud.loadKey();
   if(Cloud.enabled){
     const inp=document.getElementById('cloudKey'); if(inp) inp.value=Cloud.key;
