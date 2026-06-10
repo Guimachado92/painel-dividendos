@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <title>Provento Hub · Dividendos B3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -411,6 +412,31 @@ body {
 
 .view-hidden { display: none !important; }
 
+/* ===== ADMIN ===== */
+.adm-empty { color:var(--text-3); font-family:var(--font-mono); font-size:var(--fs-sm); text-align:center; padding:24px 0; }
+.adm-row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px 16px; border-bottom:1px solid var(--line); }
+.adm-row:last-child { border-bottom:none; }
+.adm-row .who { min-width:180px; flex:1; }
+.adm-row .who b { color:var(--text-0); font-weight:600; display:block; font-size:var(--fs-base); }
+.adm-row .who span { color:var(--text-2); font-family:var(--font-mono); font-size:var(--fs-xs); }
+.adm-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.adm-btn { padding:7px 14px; border:1px solid var(--line-2); border-radius:8px; background:var(--bg-2); color:var(--text-1); font-family:var(--font-mono); font-size:var(--fs-xs); letter-spacing:.04em; cursor:pointer; transition:all .15s; min-height:36px; }
+.adm-btn:hover { background:var(--bg-3); }
+.adm-btn.ok { border-color:rgba(6,182,212,.4); color:var(--up); }
+.adm-btn.ok:hover { background:rgba(6,182,212,.12); }
+.adm-btn.danger { border-color:rgba(239,68,68,.4); color:var(--down); }
+.adm-btn.danger:hover { background:rgba(239,68,68,.12); }
+.st-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-family:var(--font-mono); font-size:var(--fs-xs); letter-spacing:.06em; text-transform:uppercase; }
+.st-pendente { background:rgba(255,181,71,.12); color:var(--warn); border:1px solid rgba(255,181,71,.3); }
+.st-aprovado { background:rgba(6,182,212,.12); color:var(--up); border:1px solid rgba(6,182,212,.3); }
+.st-bloqueado, .st-rejeitado { background:rgba(239,68,68,.12); color:var(--down); border:1px solid rgba(239,68,68,.3); }
+.adm-log { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:9px 12px; border-bottom:1px solid var(--line); font-family:var(--font-mono); font-size:var(--fs-xs); }
+.adm-log:last-child { border-bottom:none; }
+.adm-log .acao { color:var(--accent); font-weight:600; white-space:nowrap; }
+.adm-log .desc { color:var(--text-1); }
+.adm-log .meta { color:var(--text-3); text-align:right; white-space:nowrap; }
+@media (max-width:640px){ .adm-log { grid-template-columns:1fr; gap:3px; } .adm-log .meta { text-align:left; } }
+
 .hide-dash { position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; opacity: 0; pointer-events: none; z-index: -10; visibility: hidden; }
 
 select { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 1rem top 50%; background-size: .65rem auto; }
@@ -541,7 +567,36 @@ select { appearance: none; background-image: url("data:image/svg+xml;charset=US-
         </div>
         
         <button class="l-btn" onclick="verify2FA()">Validar Acesso</button>
-        <div style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-2);">
+        <div style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-2);">
+          <a href="#" onclick="sendEmailCode(); return false;" style="color: var(--accent); text-decoration: none;">Não consigo usar o app — enviar código por e-mail</a>
+        </div>
+        <div style="text-align: center; margin-top: 12px; font-size: 13px; color: var(--text-2);">
+          <a href="#" onclick="switchView('view-login'); return false;" style="color: var(--text-3); text-decoration: none;">Voltar para o login</a>
+        </div>
+      </div>
+
+      <div id="view-setup-2fa" class="login-form view-hidden">
+        <div class="login-form-title" style="font-size:20px;">Ativar Autenticação 2FA</div>
+        <div class="login-form-sub">Obrigatória. Escaneie o QR Code no Google Authenticator, Microsoft Authenticator ou Authy.</div>
+
+        <div style="display:flex; justify-content:center; margin-bottom:16px;">
+          <div style="background:#fff; padding:12px; border-radius:12px;">
+            <canvas id="qr-2fa"></canvas>
+          </div>
+        </div>
+
+        <div style="text-align:center; margin-bottom:20px;">
+          <div class="l-label" style="margin-bottom:6px;">Ou digite a chave manualmente</div>
+          <code id="setup-secret" style="font-family:var(--font-mono); font-size:13px; color:var(--accent); word-break:break-all;"></code>
+        </div>
+
+        <div class="l-input-group">
+          <label class="l-label">Código gerado pelo app (6 dígitos)</label>
+          <input type="text" id="setup-code" class="l-input" placeholder="000000" style="text-align:center; font-size:24px; letter-spacing:0.3em; font-family:var(--font-mono);" inputmode="numeric" pattern="[0-9]*">
+        </div>
+
+        <button class="l-btn" onclick="confirmEnable2FA()">Ativar e Entrar</button>
+        <div style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-2);">
           <a href="#" onclick="switchView('view-login'); return false;" style="color: var(--text-3); text-decoration: none;">Voltar para o login</a>
         </div>
       </div>
@@ -551,64 +606,123 @@ select { appearance: none; background-image: url("data:image/svg+xml;charset=US-
 </div>
 
 <script>
-const DB_USERS_KEY = 'ph_users_db';
-let tempAuthEmail = '';
-let temp2faCode = '';
+// ==========================================================================
+// Integração com o backend Cloudflare (Provento Hub API)
+// Defina API_BASE com a URL do seu Worker, ex.:
+//   https://provento-hub-api.SUACONTA.workers.dev
+// --------------------------------------------------------------------------
+const API_BASE = (window.PROVENTO_API_BASE || 'https://provento-hub-api.SUACONTA.workers.dev').replace(/\/$/, '');
 
-function getUsersDB() { return JSON.parse(localStorage.getItem(DB_USERS_KEY) || '{}'); }
-function saveUsersDB(usersObj) { localStorage.setItem(DB_USERS_KEY, JSON.stringify(usersObj)); }
+// Estado da sessão de login em andamento.
+let challengeToken = '';   // desafio pós-senha (2FA)
+let csrfToken = '';        // token CSRF para chamadas autenticadas
+window.PROVENTO_CSRF = '';
+
+// --- Cliente HTTP (envia cookies de sessão e o cabeçalho CSRF) ------------
+async function apiFetch(path, { method = 'GET', body } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (csrfToken && method !== 'GET') headers['X-CSRF-Token'] = csrfToken;
+  let res, data;
+  try {
+    res = await fetch(API_BASE + path, {
+      method,
+      headers,
+      credentials: 'include',          // necessário para os cookies HttpOnly
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    data = await res.json().catch(() => ({}));
+  } catch (e) {
+    return { ok: false, error: 'Falha de conexão com o servidor.' };
+  }
+  if (!res.ok) return { ok: false, error: data.error || 'Erro inesperado.', status: res.status };
+  return data;
+}
 
 function switchView(viewId) {
-    document.getElementById('view-login').classList.add('view-hidden');
-    document.getElementById('view-register').classList.add('view-hidden');
-    document.getElementById('view-2fa').classList.add('view-hidden');
+    ['view-login','view-register','view-2fa','view-setup-2fa'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('view-hidden');
+    });
     document.getElementById(viewId).classList.remove('view-hidden');
 }
 
-function processRegister() {
+// --- Cadastro -------------------------------------------------------------
+async function processRegister() {
     const nome = document.getElementById('reg-nome').value.trim();
     const tel = document.getElementById('reg-tel').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const pass = document.getElementById('reg-pass').value.trim();
 
-    if(!nome || !tel || !email || !pass) { alert('Por favor, preencha todos os campos obrigatórios.'); return; }
-    const users = getUsersDB();
-    if(users[email]) { alert('Este e-mail já está cadastrado no sistema.'); return; }
+    if(!nome || !email || !pass) { alert('Por favor, preencha nome, e-mail e senha.'); return; }
+    if(pass.length < 8) { alert('A senha deve ter ao menos 8 caracteres.'); return; }
 
-    users[email] = { nome: nome, telefone: tel, email: email, senha: pass, status: 'pending' };
-    saveUsersDB(users);
-    console.log(`[SIMULAÇÃO DE E-MAIL] Para admin: Execute approveUser('${email}')`);
-    alert('Cadastro enviado com sucesso! Aguarde aprovação.');
+    const r = await apiFetch('/auth/register', { method: 'POST', body: { nome, telefone: tel, email, senha: pass } });
+    if(!r.ok) { alert(r.error); return; }
+    alert(r.message || 'Cadastro enviado! Aguarde a aprovação do administrador.');
     switchView('view-login');
 }
 
-window.approveUser = function(emailParam) {
-    let users = getUsersDB();
-    if(users[emailParam]) {
-        users[emailParam].status = 'approved'; saveUsersDB(users);
-        alert(`O usuário ${emailParam} foi APROVADO com sucesso.`);
+// --- Login (passo 1: e-mail + senha) -------------------------------------
+async function initLogin() {
+    const email = document.getElementById('log-email').value.trim();
+    const pass = document.getElementById('log-pass').value.trim();
+    if(!email || !pass) { alert('Informe e-mail e senha.'); return; }
+
+    const r = await apiFetch('/auth/login', { method: 'POST', body: { email, senha: pass } });
+    if(!r.ok) { alert(r.error); return; }
+
+    challengeToken = r.challenge || '';
+
+    if(r.step === 'setup_2fa') {
+        // Primeiro acesso após aprovação: configurar o app autenticador.
+        document.getElementById('setup-secret').textContent = r.secret || '';
+        switchView('view-setup-2fa');
+        try {
+          await QRCode.toCanvas(document.getElementById('qr-2fa'), r.otpauthUri, { width: 200, margin: 1 });
+        } catch (e) { console.warn('QR:', e); }
+    } else if(r.step === 'verify_2fa') {
+        document.getElementById('log-2fa').value = '';
+        switchView('view-2fa');
     }
 }
 
-function initLogin() {
-    const email = document.getElementById('log-email').value.trim();
-    const pass = document.getElementById('log-pass').value.trim();
+// --- Ativação do 2FA (conclui a configuração inicial) ---------------------
+async function confirmEnable2FA() {
+    const code = document.getElementById('setup-code').value.trim();
+    if(!/^\d{6}$/.test(code)) { alert('Digite o código de 6 dígitos do app.'); return; }
 
-    if(!email || !pass) { alert('Informe e-mail e senha.'); return; }
-    const users = getUsersDB(); const user = users[email];
-
-    if(!user || user.senha !== pass) { alert('E-mail ou senha inválidos.'); return; }
-    if(user.status === 'pending') { alert('Acesso negado: Aguarde aprovação.'); return; }
-
-    tempAuthEmail = email;
-    temp2faCode = Math.floor(100000 + Math.random() * 900000).toString();
-    alert(`[Simulação Front-end]\nCódigo enviado para ${email}: ${temp2faCode}`);
-    switchView('view-2fa');
+    const r = await apiFetch('/auth/enable-2fa', { method: 'POST', body: { challenge: challengeToken, code } });
+    if(!r.ok) { alert(r.error); return; }
+    onAuthenticated(r);
 }
 
-function verify2FA() {
+// --- 2FA (passo 2: validar código) ---------------------------------------
+async function verify2FA() {
     const code = document.getElementById('log-2fa').value.trim();
-    if(code === temp2faCode) { finishLogin(); } else { alert('Código incorreto.'); }
+    if(!code) { alert('Informe o código.'); return; }
+
+    const r = await apiFetch('/auth/verify-2fa', { method: 'POST', body: { challenge: challengeToken, code } });
+    if(!r.ok) { alert(r.error); return; }
+    onAuthenticated(r);
+}
+
+// --- Fallback: enviar código 2FA por e-mail ------------------------------
+async function sendEmailCode() {
+    const r = await apiFetch('/auth/send-email-code', { method: 'POST', body: { challenge: challengeToken } });
+    alert(r.ok ? (r.message || 'Código enviado para o seu e-mail.') : r.error);
+}
+
+// --- Pós-autenticação: guarda o CSRF e entra no painel -------------------
+function onAuthenticated(r) {
+    csrfToken = r.csrf || '';
+    window.PROVENTO_CSRF = csrfToken;
+    window.PROVENTO_USER = r.user || null;
+    // Revela a aba Admin apenas para o administrador.
+    if (r.user && r.user.role === 'admin') {
+        const t = document.getElementById('adminTab');
+        if (t) t.style.display = '';
+    }
+    finishLogin();
 }
 
 function finishLogin() {
@@ -649,6 +763,7 @@ function finishLogin() {
       <button class="tab active" data-page="painel">Painel</button>
       <button class="tab" data-page="alocador">Alocador</button>
       <button class="tab" data-page="carteira">Carteira</button>
+      <button class="tab" data-page="admin" id="adminTab" style="display:none">Admin</button>
     </div>
     <button class="src-badge" id="updateBtn" onclick="requestUpdate()" aria-label="Atualizar preços de ações">
       <span class="dot" id="srcDot"></span>
@@ -882,6 +997,90 @@ function finishLogin() {
     <div class="panel" style="margin-bottom:0">
       <div class="panel-head"><h3>Linha do tempo de aportes</h3><span class="sub" id="aporteCount">—</span></div>
       <div class="panel-body" id="aporteLog" style="font-family:var(--font-mono);font-size:var(--fs-sm)"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-admin">
+    <div class="head">
+      <div class="eyebrow">— Painel administrativo</div>
+      <h2>Gestão de <em>acessos</em> e segurança</h2>
+      <p>Aprove ou rejeite solicitações, gerencie usuários, monitore tentativas de login e consulte a trilha de auditoria. Visível apenas para o administrador.</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi primary">
+        <div class="lbl">Pendentes</div>
+        <div class="val" id="kAdmPend">—</div>
+        <div class="foot">aguardando aprovação</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Aprovados</div>
+        <div class="val" id="kAdmAprov">—</div>
+        <div class="foot">contas ativas</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Bloqueados</div>
+        <div class="val" id="kAdmBloq">—</div>
+        <div class="foot">acesso suspenso</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Eventos críticos</div>
+        <div class="val" id="kAdmEvt">—</div>
+        <div class="foot">falhas / bloqueios recentes</div>
+      </div>
+    </div>
+
+    <!-- Sub-abas do admin -->
+    <div class="seg" style="margin-bottom:var(--space-md); max-width:520px;">
+      <button class="active" data-asub="solicitacoes" onclick="adminSub('solicitacoes')">Solicitações</button>
+      <button data-asub="usuarios" onclick="adminSub('usuarios')">Usuários</button>
+      <button data-asub="seguranca" onclick="adminSub('seguranca')">Segurança</button>
+      <button data-asub="auditoria" onclick="adminSub('auditoria')">Auditoria</button>
+    </div>
+
+    <!-- SOLICITAÇÕES -->
+    <div class="panel adm-pane" id="apane-solicitacoes">
+      <div class="panel-head">
+        <h3>Solicitações de cadastro</h3>
+        <span class="sub"><a href="#" onclick="loadAdmin(); return false;" style="color:var(--accent);text-decoration:none">↻ atualizar</a></span>
+      </div>
+      <div class="panel-body" id="admReqs"><div class="adm-empty">Carregando…</div></div>
+    </div>
+
+    <!-- USUÁRIOS -->
+    <div class="panel adm-pane view-hidden" id="apane-usuarios">
+      <div class="panel-head">
+        <h3>Usuários</h3>
+        <span class="sub">
+          <select id="admUserFilter" onchange="loadUsers()" style="background:var(--bg-2);border:1px solid var(--line);color:var(--text-1);border-radius:8px;padding:6px 28px 6px 10px;font-family:var(--font-mono);font-size:11px">
+            <option value="">Todos</option>
+            <option value="pendente">Pendentes</option>
+            <option value="aprovado">Aprovados</option>
+            <option value="bloqueado">Bloqueados</option>
+            <option value="rejeitado">Rejeitados</option>
+          </select>
+        </span>
+      </div>
+      <div class="panel-body" id="admUsers"><div class="adm-empty">Carregando…</div></div>
+    </div>
+
+    <!-- SEGURANÇA -->
+    <div class="panel adm-pane view-hidden" id="apane-seguranca">
+      <div class="panel-head"><h3>Monitoramento de segurança</h3><span class="sub">contas bloqueadas + eventos</span></div>
+      <div class="panel-body" id="admSecurity"><div class="adm-empty">Carregando…</div></div>
+    </div>
+
+    <!-- AUDITORIA -->
+    <div class="panel adm-pane view-hidden" id="apane-auditoria">
+      <div class="panel-head"><h3>Trilha de auditoria</h3><span class="sub">últimos eventos</span></div>
+      <div class="panel-body">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <input id="logAcao" placeholder="Ação (ex.: LOGIN_FAIL)" style="flex:1;min-width:140px;background:var(--bg-2);border:1px solid var(--line);color:var(--text-1);border-radius:8px;padding:8px 10px;font-family:var(--font-mono);font-size:12px">
+          <input id="logUser" placeholder="user_id" style="flex:1;min-width:140px;background:var(--bg-2);border:1px solid var(--line);color:var(--text-1);border-radius:8px;padding:8px 10px;font-family:var(--font-mono);font-size:12px">
+          <button class="btn btn-primary" style="width:auto;min-height:auto;padding:8px 16px" onclick="loadLogs()">Filtrar</button>
+        </div>
+        <div id="admLogs"><div class="adm-empty">Carregando…</div></div>
+      </div>
     </div>
   </div>
 
@@ -1734,6 +1933,248 @@ function openUpdate(){
 }
 function closeUpdate(){ document.getElementById('updateModal').classList.remove('active'); document.body.style.overflow=''; }
 
+</script>
+
+<script>
+// ==========================================================================
+// Painel administrativo — consome as rotas /admin/* do Worker
+// Reutiliza apiFetch() e csrfToken definidos no script de autenticação.
+// ==========================================================================
+(function(){
+  const ADM = (s='') => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+  const fmtDate = ms => ms ? new Date(Number(ms)).toLocaleString('pt-BR') : '—';
+
+  // Carrega a aba ao clicar.
+  const tab = document.getElementById('adminTab');
+  if (tab) tab.addEventListener('click', () => loadAdmin());
+
+  // Alterna sub-abas.
+  window.adminSub = function(name){
+    document.querySelectorAll('#page-admin .seg button').forEach(b =>
+      b.classList.toggle('active', b.dataset.asub === name));
+    document.querySelectorAll('.adm-pane').forEach(p => p.classList.add('view-hidden'));
+    document.getElementById('apane-' + name).classList.remove('view-hidden');
+    if (name === 'usuarios') loadUsers();
+    else if (name === 'seguranca') loadSecurity();
+    else if (name === 'auditoria') loadLogs();
+    else renderRequests();
+  };
+
+  // Orquestra o carregamento inicial e os KPIs.
+  window.loadAdmin = async function(){
+    const r = await apiFetch('/admin/users');
+    if (r.ok) {
+      const u = r.users || [];
+      document.getElementById('kAdmPend').textContent  = u.filter(x => x.status === 'pendente').length;
+      document.getElementById('kAdmAprov').textContent = u.filter(x => x.status === 'aprovado').length;
+      document.getElementById('kAdmBloq').textContent  = u.filter(x => x.status === 'bloqueado').length;
+    }
+    renderRequests();
+    const sec = await apiFetch('/admin/security');
+    if (sec.ok) document.getElementById('kAdmEvt').textContent = (sec.eventos || []).length;
+  };
+
+  // --- Solicitações pendentes ---------------------------------------------
+  window.renderRequests = async function(){
+    const box = document.getElementById('admReqs');
+    const r = await apiFetch('/admin/requests?status=pendente');
+    if (!r.ok) { box.innerHTML = `<div class="adm-empty">${ADM(r.error||'Erro ao carregar')}</div>`; return; }
+    const reqs = r.requests || [];
+    if (!reqs.length) { box.innerHTML = '<div class="adm-empty">Nenhuma solicitação pendente. 🎉</div>'; return; }
+    box.innerHTML = reqs.map(q => `
+      <div class="adm-row">
+        <div class="who">
+          <b>${ADM(q.nome)}</b>
+          <span>${ADM(q.email)}${q.telefone ? ' · ' + ADM(q.telefone) : ''} · ${fmtDate(q.requested_at)}</span>
+        </div>
+        <div class="adm-actions">
+          ${btn('ok','Aprovar','approve-user', q.user_id)}
+          ${btn('danger','Rejeitar','reject-user', q.user_id)}
+        </div>
+      </div>`).join('');
+  };
+
+  // --- Usuários ------------------------------------------------------------
+  window.loadUsers = async function(){
+    const box = document.getElementById('admUsers');
+    const f = document.getElementById('admUserFilter').value;
+    const r = await apiFetch('/admin/users' + (f ? '?status=' + f : ''));
+    if (!r.ok) { box.innerHTML = `<div class="adm-empty">${ADM(r.error||'Erro')}</div>`; return; }
+    const users = r.users || [];
+    if (!users.length) { box.innerHTML = '<div class="adm-empty">Nenhum usuário.</div>'; return; }
+    box.innerHTML = users.map(u => {
+      const acts = [];
+      if (u.status === 'pendente')  { acts.push(btn('ok','Aprovar','approve-user',u.id)); acts.push(btn('danger','Rejeitar','reject-user',u.id)); }
+      if (u.status === 'aprovado' && u.role !== 'admin') acts.push(btn('danger','Bloquear','block-user',u.id));
+      if (u.status === 'bloqueado') acts.push(btn('ok','Desbloquear','unblock-user',u.id));
+      return `<div class="adm-row">
+        <div class="who">
+          <b>${ADM(u.nome)} ${u.role === 'admin' ? '· <span style="color:var(--brand-purple)">ADMIN</span>' : ''}</b>
+          <span>${ADM(u.email)} · 2FA ${u.two_factor_enabled ? 'on' : 'off'} · ${fmtDate(u.created_at)}</span>
+        </div>
+        <div class="adm-actions">
+          <span class="st-badge st-${ADM(u.status)}">${ADM(u.status)}</span>
+          ${acts.join('')}
+        </div>
+      </div>`;
+    }).join('');
+  };
+  const btn = (cls,label,action,uid) =>
+    `<button class="adm-btn ${cls}" data-uid="${ADM(uid)}" onclick="admAction('${action}', this.dataset.uid, this)">${label}</button>`;
+
+  // --- Ação genérica de admin (aprovar/rejeitar/bloquear/desbloquear) ------
+  window.admAction = async function(action, uid, el){
+    if (el && el.dataset && el.dataset.uid) uid = el.dataset.uid;
+    if (!uid) return;
+    const labels = { 'approve-user':'aprovar','reject-user':'rejeitar','block-user':'bloquear','unblock-user':'desbloquear' };
+    if (!confirm(`Confirmar ${labels[action] || action} este usuário?`)) return;
+    if (el) { el.disabled = true; el.textContent = '...'; }
+    const r = await apiFetch('/admin/' + action, { method: 'POST', body: { userId: uid } });
+    if (!r.ok) { alert(r.error || 'Falha na operação.'); if (el) el.disabled = false; return; }
+    loadAdmin();
+    const pane = document.querySelector('#page-admin .seg button.active');
+    if (pane && pane.dataset.asub === 'usuarios') loadUsers();
+  };
+
+  // --- Segurança -----------------------------------------------------------
+  window.loadSecurity = async function(){
+    const box = document.getElementById('admSecurity');
+    const r = await apiFetch('/admin/security');
+    if (!r.ok) { box.innerHTML = `<div class="adm-empty">${ADM(r.error||'Erro')}</div>`; return; }
+    const locked = r.contasBloqueadas || [];
+    const evts = r.eventos || [];
+    let html = `<div style="font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Contas bloqueadas (${locked.length})</div>`;
+    html += locked.length ? locked.map(u => `
+      <div class="adm-row">
+        <div class="who"><b>${ADM(u.nome)}</b><span>${ADM(u.email)} · ${u.failed_login_attempts} falhas</span></div>
+        <span class="st-badge st-bloqueado">${ADM(u.status)}</span>
+      </div>`).join('') : '<div class="adm-empty">Nenhuma conta bloqueada.</div>';
+    html += `<div style="font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--text-3);text-transform:uppercase;letter-spacing:.1em;margin:18px 0 10px">Eventos recentes (${evts.length})</div>`;
+    html += evts.length ? evts.map(e => `
+      <div class="adm-log">
+        <span class="acao">${ADM(e.acao)}</span>
+        <span class="desc">${ADM(e.descricao||'')}</span>
+        <span class="meta">${ADM(e.ip||'')} · ${fmtDate(e.created_at)}</span>
+      </div>`).join('') : '<div class="adm-empty">Sem eventos.</div>';
+    box.innerHTML = html;
+  };
+
+  // --- Auditoria -----------------------------------------------------------
+  window.loadLogs = async function(){
+    const box = document.getElementById('admLogs');
+    const acao = document.getElementById('logAcao').value.trim();
+    const user = document.getElementById('logUser').value.trim();
+    const qs = new URLSearchParams();
+    if (acao) qs.set('acao', acao);
+    if (user) qs.set('userId', user);
+    qs.set('limit', '200');
+    const r = await apiFetch('/admin/logs?' + qs.toString());
+    if (!r.ok) { box.innerHTML = `<div class="adm-empty">${ADM(r.error||'Erro')}</div>`; return; }
+    const logs = r.logs || [];
+    if (!logs.length) { box.innerHTML = '<div class="adm-empty">Nenhum log encontrado.</div>'; return; }
+    box.innerHTML = logs.map(l => `
+      <div class="adm-log">
+        <span class="acao">${ADM(l.acao)}</span>
+        <span class="desc">${ADM(l.descricao||'')}</span>
+        <span class="meta">${ADM(l.ip||'')} · ${fmtDate(l.created_at)}</span>
+      </div>`).join('');
+  };
+})();
+</script>
+
+<script>
+// ==========================================================================
+// MODO DEMO — visualização do painel admin SEM backend.
+// Ative abrindo a página com ?demo=1 (ou #demo) na URL.
+// Substitui apiFetch() por dados fictícios em memória e pula o login.
+// Não afeta o funcionamento normal (só roda com a flag).
+// ==========================================================================
+(function(){
+  const params = new URLSearchParams(location.search);
+  if (params.get('demo') !== '1' && location.hash !== '#demo') return;
+
+  const now = Date.now();
+  const h = 3600 * 1000;
+
+  // ---- Base de dados fictícia (mutável, para as ações refletirem na tela) --
+  const users = [
+    { id:'u-admin', nome:'Você (Admin)', email:'admin@proventohub.com', telefone:'(11) 90000-0000', role:'admin', status:'aprovado', two_factor_enabled:1, failed_login_attempts:0, account_locked_until:null, created_at: now - 90*24*h },
+    { id:'u-001', nome:'Mariana Costa', email:'mariana.costa@email.com', telefone:'(21) 98888-1122', role:'user', status:'pendente', two_factor_enabled:0, failed_login_attempts:0, account_locked_until:null, created_at: now - 2*h },
+    { id:'u-002', nome:'Rafael Almeida', email:'rafael.almeida@email.com', telefone:'(31) 97777-3344', role:'user', status:'pendente', two_factor_enabled:0, failed_login_attempts:0, account_locked_until:null, created_at: now - 5*h },
+    { id:'u-003', nome:'Juliana Pereira', email:'ju.pereira@email.com', telefone:'(11) 96666-5566', role:'user', status:'aprovado', two_factor_enabled:1, failed_login_attempts:0, account_locked_until:null, created_at: now - 12*24*h },
+    { id:'u-004', nome:'Carlos Mendes', email:'carlos.mendes@email.com', telefone:'(41) 95555-7788', role:'user', status:'aprovado', two_factor_enabled:1, failed_login_attempts:0, account_locked_until:null, created_at: now - 30*24*h },
+    { id:'u-005', nome:'Tentativa Suspeita', email:'suspeito@spam.xyz', telefone:'', role:'user', status:'bloqueado', two_factor_enabled:0, failed_login_attempts:5, account_locked_until: now + 10*60*1000, created_at: now - 1*24*h },
+    { id:'u-006', nome:'Bruno Lima', email:'bruno.lima@email.com', telefone:'(51) 94444-9900', role:'user', status:'rejeitado', two_factor_enabled:0, failed_login_attempts:0, account_locked_until:null, created_at: now - 4*24*h },
+  ];
+  const reviewed = {}; // user_id -> status revisado
+
+  const logs = [
+    { id:'l1', acao:'LOGIN_OK',       descricao:'Login concluído', user_id:'u-003', tenant_id:'tenant_u-003', ip:'201.17.x.x', created_at: now - 8*60*1000 },
+    { id:'l2', acao:'ACCOUNT_LOCKED', descricao:'Conta bloqueada após 5 tentativas', user_id:'u-005', tenant_id:null, ip:'45.221.x.x', created_at: now - 20*60*1000 },
+    { id:'l3', acao:'LOGIN_FAIL',     descricao:'Senha incorreta (3/5)', user_id:'u-005', tenant_id:null, ip:'45.221.x.x', created_at: now - 22*60*1000 },
+    { id:'l4', acao:'TWOFA_OK',       descricao:'2FA validado', user_id:'u-004', tenant_id:'tenant_u-004', ip:'189.45.x.x', created_at: now - 2*h },
+    { id:'l5', acao:'USER_APPROVED',  descricao:'Aprovou ju.pereira@email.com', user_id:'u-admin', tenant_id:'tenant_u-admin', ip:'191.2.x.x', created_at: now - 12*24*h },
+    { id:'l6', acao:'REGISTER',       descricao:'Novo cadastro: mariana.costa@email.com', user_id:'u-001', tenant_id:null, ip:'179.9.x.x', created_at: now - 2*h },
+    { id:'l7', acao:'TWOFA_SETUP',    descricao:'2FA TOTP ativado', user_id:'u-003', tenant_id:'tenant_u-003', ip:'201.17.x.x', created_at: now - 12*24*h },
+    { id:'l8', acao:'SUSPICIOUS',     descricao:'Múltiplas tentativas de e-mails inexistentes', user_id:null, tenant_id:null, ip:'45.221.x.x', created_at: now - 25*60*1000 },
+  ];
+
+  const reqStatus = (u) => reviewed[u.id] || u.status;
+
+  // ---- apiFetch fictício ---------------------------------------------------
+  apiFetch = async function(path, opts = {}){
+    await new Promise(r => setTimeout(r, 120)); // simula latência de rede
+    const method = (opts.method || 'GET').toUpperCase();
+    const sp = new URL('http://x' + path).searchParams;
+
+    if (path.startsWith('/admin/users')) {
+      const f = sp.get('status');
+      const list = users.map(u => ({ ...u, status: reqStatus(u) }));
+      return { ok:true, users: f ? list.filter(u => u.status === f) : list };
+    }
+    if (path.startsWith('/admin/requests')) {
+      const reqs = users
+        .filter(u => reqStatus(u) === 'pendente')
+        .map(u => ({ id:'req-'+u.id, user_id:u.id, status:'pendente', requested_at:u.created_at, nome:u.nome, email:u.email, telefone:u.telefone }));
+      return { ok:true, requests: reqs };
+    }
+    if (path.startsWith('/admin/security')) {
+      const bloq = users.filter(u => ['bloqueado'].includes(reqStatus(u)) || u.account_locked_until > now);
+      return { ok:true, contasBloqueadas: bloq, eventos: logs.filter(l => ['LOGIN_FAIL','TWOFA_FAIL','ACCOUNT_LOCKED','SUSPICIOUS'].includes(l.acao)) };
+    }
+    if (path.startsWith('/admin/logs')) {
+      let out = logs.slice();
+      if (sp.get('acao')) out = out.filter(l => l.acao === sp.get('acao'));
+      if (sp.get('userId')) out = out.filter(l => l.user_id === sp.get('userId'));
+      return { ok:true, logs: out.sort((a,b)=>b.created_at-a.created_at) };
+    }
+    // Ações POST: refletem na base fictícia.
+    if (method === 'POST' && path.startsWith('/admin/')) {
+      const uid = (opts.body && opts.body.userId) || '';
+      const map = { '/admin/approve-user':'aprovado', '/admin/reject-user':'rejeitado', '/admin/block-user':'bloqueado', '/admin/unblock-user':'aprovado' };
+      if (map[path]) { reviewed[uid] = map[path]; return { ok:true, message:'Ação aplicada (demo).' }; }
+    }
+    return { ok:true };
+  };
+
+  // ---- Bypass do login e abertura do painel --------------------------------
+  function start(){
+    window.PROVENTO_USER = { id:'u-admin', nome:'Você (Admin)', email:'admin@proventohub.com', role:'admin' };
+    const tab = document.getElementById('adminTab');
+    if (tab) tab.style.display = '';
+    if (typeof finishLogin === 'function') finishLogin();
+    const admBtn = document.querySelector('.tab[data-page="admin"]');
+    if (admBtn) admBtn.click();
+
+    // Banner de aviso.
+    const b = document.createElement('div');
+    b.textContent = 'MODO DEMO · dados fictícios, sem backend. Ações não são persistidas.';
+    b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:300;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;text-align:center;padding:7px;box-shadow:0 -4px 16px rgba(0,0,0,.3)';
+    document.body.appendChild(b);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
 </script>
 </div>
 </body>
